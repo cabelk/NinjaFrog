@@ -111,7 +111,7 @@
 
       // Center flash image (hidden)
       const firstKey = this.flashKeys[0] || null;
-      this.centerFlash = this.add.image(WORLD_W / 2, WORLD_H / 2, firstKey);
+      this.centerFlash = this.add.image(this.cellToWorldX(this.playerCell.x), this.cellToWorldY(this.playerCell.y), firstKey);
       this.centerFlash.setVisible(false);
       this.centerFlash.setDepth(9999);
 
@@ -239,7 +239,9 @@
       const target = minDim * FLASH_SCALE;
 
       this.centerFlash.setTexture(key);
-      this.centerFlash.setPosition(WW / 2, HH / 2);
+
+      // Anchor flash at the player's current cell center (keeps attention on the avatar)
+      this.centerFlash.setPosition(this.cellToWorldX(this.playerCell.x), this.cellToWorldY(this.playerCell.y));
       this.centerFlash.setVisible(true);
       this.centerFlash.setAlpha(0.98);
 
