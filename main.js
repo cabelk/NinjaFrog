@@ -25,11 +25,81 @@
   const WORLD_W = GRID_W * TILE;
   const WORLD_H = GRID_H * TILE;
 
-  const inputState = { moveQueue: [], attackQueue: [] };
+  
+const inputState = { moveQueue: [], attackQueue: [] };
+
+// ===== Slide / Gesture Controls =====
+function directionFromDelta(dx, dy, deadZone = 12) {
+  const mag = Math.hypot(dx, dy);
+  if (mag < deadZone) return null;
+
+  const angle = Math.atan2(dy, dx);
+  const oct = Math.round((8 * angle) / (2 * Math.PI) + 8) % 8;
+
+  const dirs = [
+    [1, 0],   // E
+    [1, 1],   // SE
+    [0, 1],   // S
+    [-1, 1],  // SW
+    [-1, 0],  // W
+    [-1, -1], // NW
+    [0, -1],  // N
+    [1, -1],  // NE
+  ];
+  return dirs[oct];
+}
+
+function bindSlidePad(padEl, queue) {
+  let active = false;
+  let lastDir = null;
+  let rect = null;
+
+  padEl.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    padEl.setPointerCapture(e.pointerId);
+    rect = padEl.getBoundingClientRect();
+    active = true;
+    lastDir = null;
+  });
+
+  padEl.addEventListener("pointermove", (e) => {
+    if (!active || !rect) return;
+
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+
+    const dx = e.clientX - cx;
+    const dy = e.clientY - cy;
+
+    const dir = directionFromDelta(dx, dy);
+    if (!dir) return;
+
+    const [x, y] = dir;
+    const key = `${x},${y}`;
+
+    if (key !== lastDir) {
+      queue.push({ dx: x, dy: y });
+      lastDir = key;
+    }
+  });
+
+  function stop(e) {
+    active = false;
+    lastDir = null;
+    try { padEl.releasePointerCapture(e.pointerId); } catch {}
+  }
+
+  padEl.addEventListener("pointerup", stop);
+  padEl.addEventListener("pointercancel", stop);
+  padEl.addEventListener("pointerleave", stop);
+}
+// ===================================
+
 
   document.addEventListener("touchmove", (e) => e.preventDefault(), { passive: false });
 
-  document.querySelectorAll("[data-move]").forEach(btn => {
+  /* SLIDE CONTROLS ENABLED: old per-button listeners disabled
+document.querySelectorAll("[data-move]").forEach(btn => {
     btn.addEventListener("pointerdown", (e) => {
       e.preventDefault();
       const [dx, dy] = btn.dataset.move.split(",").map(Number);
@@ -44,6 +114,16 @@
       inputState.attackQueue.push({ dx, dy });
     }, { passive: false });
   });
+*/
+
+  
+  const movePad = document.getElementById("movePad");
+  const attackPad = document.getElementById("attackPad");
+  if (movePad && attackPad) {
+    bindSlidePad(movePad, inputState.moveQueue);
+    bindSlidePad(attackPad, inputState.attackQueue);
+  }
+
 
   document.getElementById("restart").addEventListener("pointerdown", (e) => {
     e.preventDefault();
