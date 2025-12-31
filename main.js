@@ -202,14 +202,15 @@ if (attackPad) {
     }
 
     create() {
-this.scale.resize(window.innerWidth, window.innerHeight);
+
+      this.scale.resize(window.innerWidth, window.innerHeight);
       this.scale.on("resize", (gameSize) => {
         this.cameras.main.setViewport(0, 0, gameSize.width, gameSize.height);
         this.fitWorldToScreen(gameSize.width, gameSize.height);
       });
 
       this.fitWorldToScreen(window.innerWidth, window.innerHeight);
-      // Grid lines disabled (water background)
+      // Grid disabled
 this.playerCell = { x: Math.floor(GRID_W / 2), y: Math.floor(GRID_H / 2) };
 
       // Player logical object (container) with a child sprite.
@@ -260,9 +261,7 @@ this.kills = 0;
       cam.centerOn((GRID_W * TILE) / 2, (GRID_H * TILE) / 2);
     }
 
-    drawGrid() {
-      // Intentionally disabled (no grid lines)
-    }
+    drawGrid() { /* disabled */ }
 
     cellToWorldX(cx) { return cx * TILE + TILE / 2; }
     cellToWorldY(cy) { return cy * TILE + TILE / 2; }
@@ -357,16 +356,12 @@ this.kills = 0;
     
     animateEnemyDeath(enemy) {
       if (!enemy || !enemy.scene) return;
-
-      // Prevent double-tween/double-destroy
       if (enemy._dying) return;
       enemy._dying = true;
 
-      // Absorb target = current player world position
-      const tx = this.player?.x ?? enemy.x;
-      const ty = this.player?.y ?? enemy.y;
+      var px = this.player ? this.player.x : enemy.x;
+      var py = this.player ? this.player.y : enemy.y;
 
-      // Enemy "pop" then absorb-shrink toward player
       enemy.setDepth(50);
 
       this.tweens.add({
@@ -377,8 +372,8 @@ this.kills = 0;
         onComplete: () => {
           this.tweens.add({
             targets: enemy,
-            x: tx,
-            y: ty,
+            x: px,
+            y: py,
             scale: 0,
             alpha: 0,
             duration: 160,
@@ -388,19 +383,17 @@ this.kills = 0;
         }
       });
 
-      // Player inhale swell
       if (this.player) {
         this.tweens.add({
           targets: this.player,
           scale: 1.12,
           duration: 90,
           ease: "Quad.out",
-          yoyo: true,
-          hold: 10
+          yoyo: true
         });
       }
-    }
-
+    });
+        }
       });
     }
 
@@ -552,7 +545,7 @@ flashRandomImage() {
     transparent: true,
     width: window.innerWidth,
     height: window.innerHeight,
-scene: [MainScene],
+    scene: [MainScene],
     scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH }
   };
 

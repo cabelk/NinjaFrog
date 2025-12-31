@@ -199,20 +199,17 @@ html, body {
   bottom: max(16px, calc(16px + env(safe-area-inset-bottom)));
 }
 
-
-/* --- Pond water background (requires /images/water.png) --- */
+/* Water background */
 #app {
   background-image: url("images/water.png");
   background-repeat: repeat;
   background-size: 512px 512px;
-  background-position: 0 0;
   animation: waterPan 18s linear infinite;
 }
 
 @keyframes waterPan {
-  0%   { background-position: 0px 0px; }
-  100% { background-position: 260px 180px; }
+  from { background-position: 0 0; }
+  to   { background-position: 260px 180px; }
 }
 
-/* Ensure Phaser canvas is transparent so the water shows through */
 #game canvas { background: transparent !important; }
