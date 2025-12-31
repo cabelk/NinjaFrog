@@ -185,7 +185,7 @@ html, body {
 }
 
 /* Ensure on-screen controls receive taps; canvas should not intercept pointer events */
-#game canvas { pointer-events: none; }
+#game canvas { pointer-events: none; background: transparent; }
 
 
 /* --- Mobile viewport safety --- */
@@ -197,4 +197,65 @@ html, body {
 
 .pad3 {
   bottom: max(16px, calc(16px + env(safe-area-inset-bottom)));
+}
+
+
+/* --- Water pond background (animated, subtle) --- */
+html, body {
+  background: #061a2a;
+}
+
+#app {
+  /* multi-layer "water" pattern using gradients (no asset required) */
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(120,210,255,0.22) 0%, rgba(120,210,255,0.00) 55%),
+    radial-gradient(circle at 70% 60%, rgba(80,170,255,0.18) 0%, rgba(80,170,255,0.00) 58%),
+    radial-gradient(circle at 40% 85%, rgba(40,140,255,0.14) 0%, rgba(40,140,255,0.00) 60%),
+    repeating-radial-gradient(circle at 50% 50%,
+      rgba(255,255,255,0.045) 0px,
+      rgba(255,255,255,0.00) 22px,
+      rgba(255,255,255,0.030) 44px,
+      rgba(255,255,255,0.00) 66px
+    ),
+    linear-gradient(180deg, #072b45 0%, #041521 100%);
+  background-size:
+    360px 360px,
+    420px 420px,
+    520px 520px,
+    320px 320px,
+    cover;
+  background-position:
+    0% 0%,
+    100% 30%,
+    40% 100%,
+    50% 50%,
+    0 0;
+  animation: waterDrift 14s linear infinite;
+}
+
+@keyframes waterDrift {
+  0% {
+    background-position:
+      0% 0%,
+      100% 30%,
+      40% 100%,
+      50% 50%,
+      0 0;
+  }
+  50% {
+    background-position:
+      20% 10%,
+      80% 45%,
+      55% 85%,
+      52% 48%,
+      0 0;
+  }
+  100% {
+    background-position:
+      0% 0%,
+      100% 30%,
+      40% 100%,
+      50% 50%,
+      0 0;
+  }
 }
