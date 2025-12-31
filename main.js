@@ -250,6 +250,7 @@ if (attackPad) {
           pad.setRotation((Math.random() - 0.5) * 0.12);
           if (Math.random() < 0.25) sprite.setFlipX(true);
 
+          pad.setDepth(0);
           if (this.decorLayer) this.decorLayer.add(pad);
           count++;
         }
@@ -266,9 +267,9 @@ if (attackPad) {
       this.decorLayer = this.add.layer();
       this.decorLayer.setDepth(5);
       this.entityLayer = this.add.layer();
-      this.entityLayer.setDepth(10);
+      this.entityLayer.setDepth(15);
       this.fxLayer = this.add.layer();
-      this.fxLayer.setDepth(20);
+      this.fxLayer.setDepth(30);
 
 this.scale.resize(window.innerWidth, window.innerHeight);
       this.scale.on("resize", (gameSize) => {
