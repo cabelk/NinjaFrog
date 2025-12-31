@@ -210,15 +210,27 @@ this.scale.resize(window.innerWidth, window.innerHeight);
 
       this.fitWorldToScreen(window.innerWidth, window.innerHeight);
       // Lily pads on non-border tiles
-      var lilyKeys = ["lily1", "lily2", "lily3"];
-      for (var yy = 1; yy < GRID_H - 1; yy++) {
-        for (var xx = 1; xx < GRID_W - 1; xx++) {
-          var key = lilyKeys[Math.floor(Math.random() * lilyKeys.length)];
-          var lx = this.cellToWorldX(xx);
-          var ly = this.cellToWorldY(yy);
-          var lily = this.add.image(lx, ly, key);
-          lily.setScale(0.55);
-          lily.setDepth(0);
+      // Note: if an asset is missing (wrong filename/path), we skip placement to avoid Phaser's placeholder texture.
+      var lilyKeysAll = ["lily1", "lily2", "lily3"];
+      var lilyKeys = [];
+      for (var kk = 0; kk < lilyKeysAll.length; kk++) {
+        if (this.textures.exists(lilyKeysAll[kk])) lilyKeys.push(lilyKeysAll[kk]);
+      }
+      if (lilyKeys.length) {
+        var lilySize = this.cellSize * 0.90; // fill most of the cell
+        for (var yy = 1; yy < GRID_H - 1; yy++) {
+          for (var xx = 1; xx < GRID_W - 1; xx++) {
+            var key = lilyKeys[Math.floor(Math.random() * lilyKeys.length)];
+            var lx = this.cellToWorldX(xx);
+            var ly = this.cellToWorldY(yy);
+            var lily = this.add.image(lx, ly, key);
+            lily.setDisplaySize(lilySize, lilySize);
+            lily.setDepth(0);
+            lily.setAlpha(0.95);
+            // Small variation so the field doesn't look tiled
+            lily.setRotation((Math.random() - 0.5) * 0.15);
+            if (Math.random() < 0.25) lily.setFlipX(true);
+          }
         }
       }
       // Grid disabled
