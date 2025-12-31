@@ -7,7 +7,7 @@
 
   // Reward flash settings
   const FLASH_KILLS_REQUIRED = 5;
-  const FLASH_WINDOW_MS = 2000;
+  const FLASH_WINDOW_MS = 3600000;
   const FLASH_DURATION_MS = 85;   // a couple frames-ish
   const FLASH_SCALE = 0.55;
 
