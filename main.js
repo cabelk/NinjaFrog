@@ -201,7 +201,7 @@ this.kills = 0;
     statusLine(extra = "") {
       const t = ((performance.now() - this.startTime) / 1000).toFixed(1);
       const kps = (this.kills / Math.max(0.001, (performance.now() - this.startTime) / 1000)).toFixed(2);
-      return `Kills: ${this.kills} | Time: ${t}s | KPS: ${kps} | Enemies: ${this.enemies.size}${extra ? " | " + extra : ""}`;
+      return `Grid: ${GRID_W}x${GRID_H} @${TILE}px | Kills: ${this.kills} | Time: ${t}s | KPS: ${kps} | Enemies: ${this.enemies.size}${extra ? " | " + extra : ""}`;
     }
 
     spawnEnemyEdge() {
@@ -288,6 +288,8 @@ this.kills = 0;
       if (!this.playerSprite || !this.textures.exists(key)) return;
 
       this.playerSprite.setTexture(key);
+      // Debug: confirm adoption
+      try { setStatus(this.statusLine(`ADOPT: ${key}`)); } catch (_) {}
 
       const targetW = TILE * 0.70;
       const targetH = TILE * 0.70;
