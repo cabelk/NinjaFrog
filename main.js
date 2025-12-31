@@ -202,15 +202,14 @@ if (attackPad) {
     }
 
     create() {
-
-      this.scale.resize(window.innerWidth, window.innerHeight);
+this.scale.resize(window.innerWidth, window.innerHeight);
       this.scale.on("resize", (gameSize) => {
         this.cameras.main.setViewport(0, 0, gameSize.width, gameSize.height);
         this.fitWorldToScreen(gameSize.width, gameSize.height);
       });
 
       this.fitWorldToScreen(window.innerWidth, window.innerHeight);
-      // Grid disabled
+      // Grid disabled (water background)
 this.playerCell = { x: Math.floor(GRID_W / 2), y: Math.floor(GRID_H / 2) };
 
       // Player logical object (container) with a child sprite.
@@ -262,6 +261,7 @@ this.kills = 0;
     }
 
     drawGrid() { /* disabled */ }
+
 
     cellToWorldX(cx) { return cx * TILE + TILE / 2; }
     cellToWorldY(cy) { return cy * TILE + TILE / 2; }
@@ -364,13 +364,14 @@ this.kills = 0;
 
       enemy.setDepth(50);
 
-      this.tweens.add({
+      var scene = this;
+      scene.tweens.add({
         targets: enemy,
         scale: 1.15,
         duration: 70,
         ease: "Quad.out",
-        onComplete: () => {
-          this.tweens.add({
+        onComplete: function () {
+          scene.tweens.add({
             targets: enemy,
             x: px,
             y: py,
@@ -378,7 +379,7 @@ this.kills = 0;
             alpha: 0,
             duration: 160,
             ease: "Quad.in",
-            onComplete: () => enemy.destroy()
+            onComplete: function () { enemy.destroy(); }
           });
         }
       });
@@ -389,13 +390,12 @@ this.kills = 0;
           scale: 1.12,
           duration: 90,
           ease: "Quad.out",
-          yoyo: true
+          yoyo: true,
+          hold: 10
         });
       }
-    });
-        }
-      });
     }
+
 
 playAttackFlash(dx, dy) {
       const x0 = this.cellToWorldX(this.playerCell.x);

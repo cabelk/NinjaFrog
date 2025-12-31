@@ -199,6 +199,7 @@ html, body {
   bottom: max(16px, calc(16px + env(safe-area-inset-bottom)));
 }
 
+
 /* Water background */
 #app {
   background-image: url("images/water.png");
