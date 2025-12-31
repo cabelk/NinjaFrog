@@ -172,7 +172,9 @@ if (attackPad) {
       this.startTime = 0;
       this.dead = false;
 
-      this.attackFlash = null;
+      
+      this.hideGameOverOverlay();
+this.attackFlash = null;
 
       this.killTimes = [];
       this.centerFlash = null;
@@ -319,7 +321,11 @@ this.attackFlash = this.add.graphics();
       this.centerFlash.setOrigin(0.5, 0.5);
 this.kills = 0;
       this.startTime = performance.now();
-      this.dead = false;
+      
+      this.loadHighScore();
+      this.updateHighScoreUI();
+      this.hideGameOverOverlay();
+this.dead = false;
       setStatus(this.statusLine());
 
       this.time.addEvent({
@@ -348,13 +354,60 @@ this.kills = 0;
     statusLine(extra = "") {
       const t = ((performance.now() - this.startTime) / 1000).toFixed(1);
       const kps = (this.kills / Math.max(0.001, (performance.now() - this.startTime) / 1000)).toFixed(2);
-      const line1 = `Kills: ${this.kills}`;
-      const line2 = `Time: ${t}s   KPS: ${kps}`;
-      const line3 = `Enemies: ${this.enemies.size}${extra ? "   " + extra : ""}`;
+      const line1 = `Kills: ${this.kills}   KPS: ${kps}`;
+      const line2 = `Time: ${t}s`;
+      const line3 = extra ? `${extra}` : "";
       return `${line1}
 ${line2}
 ${line3}`;
     }
+
+    loadHighScore() {
+      const hk = parseInt(localStorage.getItem("nf_highKills") || "0", 10);
+      const hkp = parseFloat(localStorage.getItem("nf_highKps") || "0");
+      this.highKills = isFinite(hk) ? hk : 0;
+      this.highKps = isFinite(hkp) ? hkp : 0;
+    }
+
+    saveHighScore(kills, kps) {
+      this.highKills = kills;
+      this.highKps = kps;
+      try {
+        localStorage.setItem("nf_highKills", String(kills));
+        localStorage.setItem("nf_highKps", String(kps));
+      } catch (_) {}
+      this.updateHighScoreUI();
+    }
+
+    isNewHighScore(kills, kps) {
+      if (kills > this.highKills) return true;
+      if (kills < this.highKills) return false;
+      return kps > this.highKps;
+    }
+
+    updateHighScoreUI() {
+      const el = document.getElementById("highScore");
+      if (!el) return;
+      el.style.display = "block";
+      el.textContent = `High: ${this.highKills} (KPS: ${this.highKps.toFixed(2)})`;
+    }
+
+    showGameOverOverlay(kills, kps, isNewHigh) {
+      const el = document.getElementById("gameOver");
+      if (!el) return;
+
+      const badge = isNewHigh ? "\nNEW HIGH SCORE" : "";
+      el.style.display = "block";
+      el.textContent = `Game Over\nKills: ${kills}\nKPS: ${kps.toFixed(2)}${badge}`;
+    }
+
+    hideGameOverOverlay() {
+      const el = document.getElementById("gameOver");
+      if (!el) return;
+      el.style.display = "none";
+      el.textContent = "";
+    }
+
 
     spawnEnemyEdge() {
       if (this.enemies.size >= MAX_ENEMIES) return;
@@ -411,7 +464,19 @@ ${line3}`;
 
     die(reason) {
       this.dead = true;
+
+      const elapsed = (performance.now() - this.startTime) / 1000;
+      const kps = this.kills / Math.max(0.001, elapsed);
+
+      const isNewHigh = this.isNewHighScore(this.kills, kps);
+      if (isNewHigh) this.saveHighScore(this.kills, kps);
+
+      // Status panel
       setStatus(this.statusLine(`DEAD: ${reason}. Tap Restart.`));
+
+      // Center overlay
+      this.showGameOverOverlay(this.kills, kps, isNewHigh);
+
       if (this.playerSprite && this.playerSprite.setTint) { this.playerSprite.setTint(0x3b4b5c); }
       if (this.playerSprite && this.playerSprite.setAlpha) { this.playerSprite.setAlpha(0.85); }
     }

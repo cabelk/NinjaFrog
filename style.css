@@ -218,3 +218,34 @@ html, body {
 
 /* Ensure Phaser canvas is transparent so the water shows through */
 #game canvas { background: transparent !important; }
+
+
+#highScore{
+  position:absolute;
+  right:12px;
+  top:10px;
+  font: 14px/1.2 system-ui;
+  color:#fff;
+  opacity:0.9;
+  text-align:right;
+  pointer-events:none;
+  white-space:nowrap;
+}
+
+#gameOver{
+  position:fixed;
+  left:50%;
+  top:45%;
+  transform:translate(-50%,-50%);
+  z-index:99998;
+  display:none;
+  font: 22px/1.25 system-ui;
+  color:#fff;
+  text-align:center;
+  white-space:pre-line;
+  padding:16px 18px;
+  border-radius:16px;
+  background:rgba(0,0,0,0.55);
+  backdrop-filter:blur(8px);
+  pointer-events:none;
+}
