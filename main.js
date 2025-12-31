@@ -186,6 +186,10 @@ if (attackPad) {
 
       // Enemy sprite
       this.load.image("enemy_fly", "images/fly.png");
+      // Lily pads
+      this.load.image("lily1", "images/lily1.png");
+      this.load.image("lily2", "images/lily2.png");
+      this.load.image("lily3", "images/lily3.png");
 
       // Surface asset load failures (common issue on GitHub Pages due to path/case)
       this.load.on('loaderror', (file) => {
