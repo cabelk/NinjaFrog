@@ -385,14 +385,29 @@ this.kills = 0;
       });
 
       if (this.player) {
-        this.tweens.add({
-          targets: this.player,
-          scale: 1.12,
-          duration: 90,
-          ease: "Quad.out",
-          yoyo: true,
-          hold: 10
-        });
+        // Robust inhale: reuse one tween and restart it so it never "dies" under rapid absorbs
+        // Also force scale back to baseline in case prior overlap left it slightly off.
+        this.player.setScale(1);
+
+        if (!this._inhaleTween) {
+          this._inhaleTween = this.tweens.add({
+            targets: this.player,
+            scaleX: 1.12,
+            scaleY: 1.12,
+            duration: 90,
+            ease: "Quad.out",
+            yoyo: true,
+            hold: 10,
+            paused: true,
+            onComplete: () => {
+              // Guarantee baseline when finishing
+              if (this.player) this.player.setScale(1);
+            }
+          });
+        }
+
+        // Restart from the beginning every time we absorb an enemy
+        this._inhaleTween.restart();
       }
     }
 
