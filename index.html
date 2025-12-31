@@ -8,6 +8,16 @@
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
 </head>
 <body>
+  <script>
+    (function(){
+      function showErr(msg){
+        var el=document.getElementById('status');
+        if(el) el.textContent = 'ERROR: ' + msg;
+      }
+      window.addEventListener('error', function(e){ showErr(e.message || e.error || 'unknown'); });
+      window.addEventListener('unhandledrejection', function(e){ showErr((e.reason && e.reason.message) ? e.reason.message : String(e.reason)); });
+    })();
+  </script>
   <div id="app">
     <div id="game"></div>
 
@@ -47,6 +57,6 @@
     </div>
   </div>
 
-  <script src="main.js?v=20251231_09"></script>
+  <script src="main.js?v=20251231_10"></script>
 </body>
 </html>
