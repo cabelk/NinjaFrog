@@ -209,11 +209,8 @@ this.scale.resize(window.innerWidth, window.innerHeight);
       });
 
       this.fitWorldToScreen(window.innerWidth, window.innerHeight);
-
-      this.gridGfx = this.add.graphics();
-      this.drawGrid();
-
-      this.playerCell = { x: Math.floor(GRID_W / 2), y: Math.floor(GRID_H / 2) };
+      // Grid lines disabled (water background)
+this.playerCell = { x: Math.floor(GRID_W / 2), y: Math.floor(GRID_H / 2) };
 
       // Player logical object (container) with a child sprite.
       const px = this.cellToWorldX(this.playerCell.x);
@@ -264,12 +261,7 @@ this.kills = 0;
     }
 
     drawGrid() {
-      const WW = GRID_W * TILE, HH = GRID_H * TILE;
-      this.gridGfx.clear();
-      this.gridGfx.lineStyle(1, 0x1f2a36, 1);
-      this.gridGfx.strokeRect(0, 0, WW, HH);
-      for (let x = 1; x < GRID_W; x++) this.gridGfx.lineBetween(x * TILE, 0, x * TILE, HH);
-      for (let y = 1; y < GRID_H; y++) this.gridGfx.lineBetween(0, y * TILE, WW, y * TILE);
+      // Intentionally disabled (no grid lines)
     }
 
     cellToWorldX(cx) { return cx * TILE + TILE / 2; }
@@ -365,26 +357,50 @@ this.kills = 0;
     
     animateEnemyDeath(enemy) {
       if (!enemy || !enemy.scene) return;
+
+      // Prevent double-tween/double-destroy
       if (enemy._dying) return;
       enemy._dying = true;
 
-      enemy.setScale(1);
+      // Absorb target = current player world position
+      const tx = this.player?.x ?? enemy.x;
+      const ty = this.player?.y ?? enemy.y;
+
+      // Enemy "pop" then absorb-shrink toward player
       enemy.setDepth(50);
 
       this.tweens.add({
         targets: enemy,
-        scale: 1.18,
+        scale: 1.15,
         duration: 70,
         ease: "Quad.out",
         onComplete: () => {
           this.tweens.add({
             targets: enemy,
+            x: tx,
+            y: ty,
             scale: 0,
-            duration: 90,
+            alpha: 0,
+            duration: 160,
             ease: "Quad.in",
             onComplete: () => enemy.destroy()
           });
         }
+      });
+
+      // Player inhale swell
+      if (this.player) {
+        this.tweens.add({
+          targets: this.player,
+          scale: 1.12,
+          duration: 90,
+          ease: "Quad.out",
+          yoyo: true,
+          hold: 10
+        });
+      }
+    }
+
       });
     }
 
