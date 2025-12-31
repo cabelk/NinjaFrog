@@ -210,8 +210,18 @@ if (attackPad) {
       // Clear prior decor (if any)
       if (this.decorLayer) this.decorLayer.removeAll(true);
 
+      // Debug overlay so we can confirm texture existence and pad count in prod
+      var status = document.getElementById("status");
+      var have1 = this.textures.exists("lily1");
+      var have2 = this.textures.exists("lily2");
+      var have3 = this.textures.exists("lily3");
+      if (status) {
+        status.style.display = "block";
+        status.textContent = "LILIES loaded? lily1=" + have1 + " lily2=" + have2 + " lily3=" + have3;
+      }
+
       var lilyKeys = ["lily1", "lily2", "lily3"];
-      var lilySize = this.cellSize * 0.95;
+      var count = 0;
 
       for (var yy = 1; yy < GRID_H - 1; yy++) {
         for (var xx = 1; xx < GRID_W - 1; xx++) {
@@ -219,16 +229,42 @@ if (attackPad) {
           var lx = this.cellToWorldX(xx);
           var ly = this.cellToWorldY(yy);
 
-          var lily = this.add.image(lx, ly, key);
-          lily.setOrigin(0.5, 0.5);
-          lily.setDisplaySize(lilySize, lilySize);
-          lily.setAlpha(0.95);
-          lily.setRotation((Math.random() - 0.5) * 0.12);
-          if (Math.random() < 0.25) lily.setFlipX(true);
+          // Same parent/child pattern as enemies: container at cell center + child sprite at (0,0)
+          var pad = this.add.container(lx, ly);
+          var sprite = this.add.image(0, 0, key);
+          pad.add(sprite);
 
-          if (this.decorLayer) this.decorLayer.add(lily);
+          // Cover+crop to fill the cell square (mirrors enemy logic)
+          if (this.textures.exists(key)) {
+            if (sprite.setCrop) sprite.setCrop();
+
+            var tex = this.textures.get(key);
+            var srcImg = (tex && tex.getSourceImage) ? tex.getSourceImage() : null;
+            var texW = (srcImg && srcImg.width) ? srcImg.width : (sprite.width || 1);
+            var texH = (srcImg && srcImg.height) ? srcImg.height : (sprite.height || 1);
+
+            var target = this.cellSize * 0.95;
+            var scale = Math.max(target / texW, target / texH);
+            sprite.setScale(scale);
+
+            var cropW = target / scale;
+            var cropH = target / scale;
+            var cx = (texW - cropW) / 2;
+            var cy = (texH - cropH) / 2;
+            if (sprite.setCrop) sprite.setCrop(cx, cy, cropW, cropH);
+          } else {
+            sprite.setDisplaySize(this.cellSize * 0.5, this.cellSize * 0.5);
+          }
+
+          pad.setRotation((Math.random() - 0.5) * 0.12);
+          if (Math.random() < 0.25) sprite.setFlipX(true);
+
+          if (this.decorLayer) this.decorLayer.add(pad);
+          count++;
         }
       }
+
+      if (status) status.textContent = status.textContent + " | pads=" + count;
     }
 
 
