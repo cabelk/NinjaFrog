@@ -1,4 +1,7 @@
 (() => {
+  // Movement slide cooldown (ms)
+  const MOVE_COOLDOWN_MS = 140;
+
   const TILE = 72; // doubled tile size (larger squares)
   const TILE_INSET = 0.01; // 1% padding per side inside each tile (very tight)
   const ENTITY_SIZE = TILE * (1 - TILE_INSET * 2); // size of sprites/enemies inside a tile // doubled tile size (larger squares)
