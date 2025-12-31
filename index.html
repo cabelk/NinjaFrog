@@ -1,53 +1,14 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>NinjaFrog Prototype</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ninja Frog Web Prototype</title>
   <link rel="stylesheet" href="style.css" />
-  <!-- Phaser 3 (pin a version for reproducible builds) -->
-  <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
 </head>
 <body>
-  <div id="app">
-    <div id="game" aria-label="game canvas"></div>
-
-    <div id="hud" aria-label="controls">
-      <div id="topBar">
-        <div id="status" role="status" aria-live="polite">Loading…</div>
-        <button id="restart" class="btn small" type="button">Restart</button>
-      </div>
-
-      <div id="movePad" class="pad3" aria-label="move pad">
-        <button class="btn padbtn" data-move="-1,-1" aria-label="move northwest">↖</button>
-        <button class="btn padbtn" data-move="0,-1"  aria-label="move north">↑</button>
-        <button class="btn padbtn" data-move="1,-1"  aria-label="move northeast">↗</button>
-
-        <button class="btn padbtn" data-move="-1,0"  aria-label="move west">←</button>
-        <div class="pad-center" aria-hidden="true"></div>
-        <button class="btn padbtn" data-move="1,0"   aria-label="move east">→</button>
-
-        <button class="btn padbtn" data-move="-1,1"  aria-label="move southwest">↙</button>
-        <button class="btn padbtn" data-move="0,1"   aria-label="move south">↓</button>
-        <button class="btn padbtn" data-move="1,1"   aria-label="move southeast">↘</button>
-      </div>
-
-      <div id="attackPad" class="pad3" aria-label="attack pad">
-        <button class="btn padbtn atk" data-atk="-1,-1" aria-label="attack northwest">↖</button>
-        <button class="btn padbtn atk" data-atk="0,-1"  aria-label="attack north">↑</button>
-        <button class="btn padbtn atk" data-atk="1,-1"  aria-label="attack northeast">↗</button>
-
-        <button class="btn padbtn atk" data-atk="-1,0"  aria-label="attack west">←</button>
-        <div class="pad-center atk-center" aria-hidden="true">ATK</div>
-        <button class="btn padbtn atk" data-atk="1,0"   aria-label="attack east">→</button>
-
-        <button class="btn padbtn atk" data-atk="-1,1"  aria-label="attack southwest">↙</button>
-        <button class="btn padbtn atk" data-atk="0,1"   aria-label="attack south">↓</button>
-        <button class="btn padbtn atk" data-atk="1,1"   aria-label="attack southeast">↘</button>
-      </div>
-    </div>
-  </div>
-
-  <script src="main.js?v=prod_20251231"></script>
+  <div id="game-container"></div>
+  <script src="main.js"></script>
 </body>
 </html>
