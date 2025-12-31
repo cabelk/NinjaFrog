@@ -209,14 +209,14 @@ this.scale.resize(window.innerWidth, window.innerHeight);
       });
 
       this.fitWorldToScreen(window.innerWidth, window.innerHeight);
-      // Lily pads on non-border tiles
-      const lilyKeys = ["lily1", "lily2", "lily3"];
-      for (let y = 1; y < GRID_H - 1; y++) {
-        for (let x = 1; x < GRID_W - 1; x++) {
-          const key = lilyKeys[Math.floor(Math.random() * lilyKeys.length)];
-          const lx = this.cellToWorldX(x);
-          const ly = this.cellToWorldY(y);
-          const lily = this.add.image(lx, ly, key);
+      // Lily pads on non-border tiles (ES5-safe)
+      var lilyKeys = ["lily1", "lily2", "lily3"];
+      for (var yy = 1; yy < GRID_H - 1; yy++) {
+        for (var xx = 1; xx < GRID_W - 1; xx++) {
+          var key = lilyKeys[Math.floor(Math.random() * lilyKeys.length)];
+          var lx = this.cellToWorldX(xx);
+          var ly = this.cellToWorldY(yy);
+          var lily = this.add.image(lx, ly, key);
           lily.setScale(0.55);
           lily.setDepth(0);
         }
