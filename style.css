@@ -247,5 +247,16 @@ html, body {
   border-radius:16px;
   background:rgba(0,0,0,0.55);
   backdrop-filter:blur(8px);
-  pointer-events:none;
+  pointer-events: auto;
 }
+
+#restartOverlay{
+  margin-top: 14px;
+  padding: 14px 18px;
+  font-size: 18px;
+  border-radius: 14px;
+  min-width: 160px;
+  justify-content: center;
+}
+
+#restartOverlay{ pointer-events: auto; }

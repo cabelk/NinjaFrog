@@ -352,15 +352,27 @@ this.dead = false;
     cellToWorldY(cy) { return cy * TILE + TILE / 2; }
 
     statusLine(extra = "") {
-      const t = ((performance.now() - this.startTime) / 1000).toFixed(1);
-      const kps = (this.kills / Math.max(0.001, (performance.now() - this.startTime) / 1000)).toFixed(2);
-      const line1 = `Kills: ${this.kills}   KPS: ${kps}`;
-      const line2 = `Time: ${t}s`;
-      const line3 = extra ? `${extra}` : "";
-      return `${line1}
-${line2}
-${line3}`;
-    }
+
+
+          const t = ((performance.now() - this.startTime) / 1000).toFixed(1);
+
+
+          const kps = (this.kills / Math.max(0.001, (performance.now() - this.startTime) / 1000)).toFixed(2);
+
+
+          const line1 = `Kills: ${this.kills}   KPS: ${kps}`;
+
+
+          const line2 = `Time: ${t}s`;
+
+
+          const line3 = extra ? `${extra}` : "";
+
+
+          return `${line1}\n${line2}\n${line3}`;
+
+
+        }
 
     loadHighScore() {
       const hk = parseInt(localStorage.getItem("nf_highKills") || "0", 10);
@@ -393,20 +405,77 @@ ${line3}`;
     }
 
     showGameOverOverlay(kills, kps, isNewHigh) {
-      const el = document.getElementById("gameOver");
-      if (!el) return;
 
-      const badge = isNewHigh ? "\nNEW HIGH SCORE" : "";
-      el.style.display = "block";
-      el.textContent = `Game Over\nKills: ${kills}\nKPS: ${kps.toFixed(2)}${badge}`;
-    }
+
+          const wrap = document.getElementById("gameOver");
+
+
+          const textEl = document.getElementById("gameOverText");
+
+
+          if (!wrap || !textEl) return;
+
+
+    
+
+
+          const badge = isNewHigh ? "\nNEW HIGH SCORE" : "";
+
+
+          wrap.style.display = "block";
+
+
+          textEl.textContent = `Game Over\nKills: ${kills}\nKPS: ${kps.toFixed(2)}${badge}`;
+
+
+    
+
+
+          const topRestart = document.getElementById("restart");
+
+
+          if (topRestart) topRestart.style.display = "none";
+
+
+          const overlayRestart = document.getElementById("restartOverlay");
+
+
+          if (overlayRestart) overlayRestart.style.display = "inline-flex";
+
+
+        }
 
     hideGameOverOverlay() {
-      const el = document.getElementById("gameOver");
-      if (!el) return;
-      el.style.display = "none";
-      el.textContent = "";
-    }
+
+
+          const wrap = document.getElementById("gameOver");
+
+
+          const textEl = document.getElementById("gameOverText");
+
+
+          if (wrap) wrap.style.display = "none";
+
+
+          if (textEl) textEl.textContent = "";
+
+
+    
+
+
+          const topRestart = document.getElementById("restart");
+
+
+          if (topRestart) topRestart.style.display = "inline-flex";
+
+
+          const overlayRestart = document.getElementById("restartOverlay");
+
+
+          if (overlayRestart) overlayRestart.style.display = "none";
+
+
+        }
 
 
     spawnEnemyEdge() {
