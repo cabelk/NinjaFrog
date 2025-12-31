@@ -84,6 +84,9 @@
       // Player sprite (must exist at images/flash2.png)
       this.load.image("player", "images/flash2.png");
 
+      // Enemy sprite
+      this.load.image("enemy_fly", "images/fly.png");
+
       // Surface asset load failures (common issue on GitHub Pages due to path/case)
       this.load.on('loaderror', (file) => {
         const el = document.getElementById('status');
@@ -195,13 +198,38 @@ this.kills = 0;
         const k = cellKey(x, y);
         if (this.enemies.has(k)) continue;
 
-        const enemy = this.add.rectangle(
-          this.cellToWorldX(x),
-          this.cellToWorldY(y),
-          ENTITY_SIZE,
-          ENTITY_SIZE,
-          0xff5d6c
-        );
+        const ex = this.cellToWorldX(x);
+        const ey = this.cellToWorldY(y);
+
+        // Enemy logical object (container) with a child sprite (mirrors player pattern)
+        const enemy = this.add.container(ex, ey);
+        const enemySprite = this.add.image(0, 0, "enemy_fly");
+
+        // Apply cover+crop to fit exactly inside the tile (same approach as player)
+        if (this.textures.exists("enemy_fly")) {
+          if (enemySprite.setCrop) enemySprite.setCrop();
+
+          const tex = this.textures.get("enemy_fly");
+          const srcImg = (tex && tex.getSourceImage) ? tex.getSourceImage() : null;
+          const texW = (srcImg && srcImg.width) ? srcImg.width : (enemySprite.width || 1);
+          const texH = (srcImg && srcImg.height) ? srcImg.height : (enemySprite.height || 1);
+
+          const targetW = ENTITY_SIZE;
+          const targetH = ENTITY_SIZE;
+
+          const sCover = Math.max(targetW / texW, targetH / texH);
+          enemySprite.setScale(sCover);
+
+          const cropW = targetW / sCover;
+          const cropH = targetH / sCover;
+          const cropX = (texW - cropW) / 2;
+          const cropY = (texH - cropH) / 2;
+
+          if (enemySprite.setCrop) enemySprite.setCrop(cropX, cropY, cropW, cropH);
+        }
+
+        enemy.add(enemySprite);
+
         this.enemies.set(k, enemy);
         setStatus(this.statusLine());
         return;
