@@ -225,7 +225,7 @@ if (attackPad) {
           // Parent/child pattern: container at cell center + child sprite at (0,0)
           var pad = this.add.container(lx, ly);
           pad.setDepth(-10);
-          var sprite = this.add.image(0, 0, key);
+var sprite = this.add.image(0, 0, key);
           pad.add(sprite);
 
           // Cover+crop to fill a square tile (same approach as enemy sprite sizing)
@@ -252,7 +252,8 @@ if (attackPad) {
           if (Math.random() < 0.25) sprite.setFlipX(true);
 
           pad.setDepth(0);
-          if (this.decorLayer) this.decorLayer.add(pad);
+          // Lily pads stay in the main display list (depth-based ordering)
+          // if (this.decorLayer) this.decorLayer.add(pad);
           count++;
         }
       }
@@ -445,7 +446,9 @@ this.kills = 0;
       this._inhaleState.s = 1;
       this.player.setScale(1);
 
-      var scene = this;
+      
+      if (this.player) this.children.bringToTop(this.player);
+var scene = this;
       this._inhaleTween = this.tweens.add({
         targets: this._inhaleState,
         s: 1.12,
