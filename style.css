@@ -22,7 +22,7 @@ html, body {
 #app { position: relative; height: 100vh; width: 100vw; overflow: hidden; }
 #game { position:absolute; inset:0; }
 
-#hud { position: absolute; inset: 0; pointer-events: none; }
+#hud { position: absolute; inset: 0; pointer-events: auto; }
 
 #topBar {
   position: absolute;
@@ -111,3 +111,7 @@ html, body {
 @media (max-width: 380px){
   :root{ --btnSize: 46px; --gap: 7px; }
 }
+
+
+/* Ensure on-screen controls receive taps; canvas should not intercept pointer events */
+#game canvas { pointer-events: none; }

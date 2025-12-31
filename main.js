@@ -149,7 +149,7 @@ this.kills = 0;
       });
 
       // Flash initial sprite to indicate starting character image
-      this.flashSpecificImage(INITIAL_PLAYER_KEY);
+      // initial flash disabled (function removed)
 
     }
 
