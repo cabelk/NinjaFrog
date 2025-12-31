@@ -1,26 +1,41 @@
 :root {
-  --btnSize: 56px;
-  --gap: 8px;
+  --btnSize: 58px;
+  --gap: 10px;
+  --padBg: rgba(0,0,0,0.22);
+  --btnBg: rgba(255,255,255,0.12);
+  --btnBgDown: rgba(255,255,255,0.24);
+  --text: rgba(255,255,255,0.92);
+
+  /* wheel geometry */
+  --wheelSize: 220px;
 }
 
 html, body {
   margin: 0;
+  padding: 0;
   height: 100%;
   background: #0b0f14;
-  color: #fff;
-  font-family: system-ui, sans-serif;
+  color: var(--text);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  overscroll-behavior: none;
   touch-action: none;
 }
 
-#game-wrap {
+#app {
   position: relative;
-  width: 100vw;
   height: 100vh;
+  width: 100vw;
+  overflow: hidden;
 }
 
 #game {
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  inset: 0;
+}
+
+canvas {
+  /* Phaser will size the canvas; make sure it stays crisp */
+  image-rendering: pixelated;
 }
 
 #hud {
@@ -29,72 +44,105 @@ html, body {
   pointer-events: none;
 }
 
-.pad {
-  position: absolute;
-  bottom: 12px;
-  background: rgba(0,0,0,0.3);
-  padding: 10px;
-  border-radius: 16px;
-  display: grid;
-  gap: var(--gap);
-  pointer-events: auto;
-}
-
-#leftPad {
-  left: 12px;
-  grid-template-columns: repeat(3, var(--btnSize));
-}
-
-#rightPad {
-  right: 12px;
-  grid-template-columns: repeat(2, var(--btnSize));
-}
-
-.btn {
-  width: var(--btnSize);
-  height: var(--btnSize);
-  border-radius: 14px;
-  background: rgba(255,255,255,0.15);
-  border: 1px solid rgba(255,255,255,0.25);
-  color: white;
-  font-size: 18px;
-  font-weight: bold;
-}
-
-.btn:active {
-  background: rgba(255,255,255,0.3);
-}
-
-.center {
-  font-size: 12px;
-}
-
-.small {
-  width: auto;
-  height: 38px;
-  padding: 0 14px;
-}
-
 #topBar {
   position: absolute;
   top: 10px;
   left: 10px;
   right: 10px;
   display: flex;
+  align-items: center;
   justify-content: space-between;
+  gap: 10px;
   pointer-events: auto;
 }
 
 #status {
-  background: rgba(0,0,0,0.4);
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 14px;
   padding: 8px 12px;
-  border-radius: 12px;
   font-size: 14px;
+  font-weight: 600;
+  max-width: 72vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.hint {
-  grid-column: 1 / -1;
-  font-size: 12px;
-  text-align: center;
-  opacity: 0.8;
+.btn {
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 14px;
+  background: var(--btnBg);
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  pointer-events: auto;
+}
+
+.btn:active { background: var(--btnBgDown); }
+
+.btn.small {
+  height: 40px;
+  padding: 0 14px;
+  font-size: 14px;
+  border-radius: 12px;
+}
+
+/* Wheels */
+.wheel {
+  position: absolute;
+  bottom: 14px;
+  width: var(--wheelSize);
+  height: var(--wheelSize);
+  border-radius: 999px;
+  background: var(--padBg);
+  pointer-events: auto;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#wheelHint { display:none; }
+
+#moveWheel { left: 14px; }
+#attackWheel { right: 14px; }
+
+.wheelbtn {
+  width: var(--btnSize);
+  height: var(--btnSize);
+  border-radius: 999px;
+  font-size: 20px;
+  position: absolute;
+}
+
+/* Place 8 buttons around the wheel */
+.wheelbtn:nth-child(1) { left: 16%; top: 16%; }   /* NW */
+.wheelbtn:nth-child(2) { left: 50%; top: 6%; transform: translateX(-50%); } /* N */
+.wheelbtn:nth-child(3) { right: 16%; top: 16%; }  /* NE */
+.wheelbtn:nth-child(4) { right: 6%; top: 50%; transform: translateY(-50%); } /* E */
+.wheelbtn:nth-child(5) { right: 16%; bottom: 16%; } /* SE */
+.wheelbtn:nth-child(6) { left: 50%; bottom: 6%; transform: translateX(-50%); } /* S */
+.wheelbtn:nth-child(7) { left: 16%; bottom: 16%; } /* SW */
+.wheelbtn:nth-child(8) { left: 6%; top: 50%; transform: translateY(-50%); } /* W */
+
+/* Landscape tuning */
+@media (orientation: landscape) {
+  :root {
+    --wheelSize: 200px;
+    --btnSize: 54px;
+  }
+  #status { max-width: 58vw; }
+}
+
+/* Small screens */
+@media (max-width: 380px) {
+  :root {
+    --wheelSize: 180px;
+    --btnSize: 48px;
+  }
 }

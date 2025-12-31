@@ -1,136 +1,298 @@
 (() => {
-  const TILE = 36;
-  const GRID_W = 11;
-  const GRID_H = 17;
+  // --- Tunables ---
+  const TILE = 36;                 // grid pixel size
+  const GRID_W = 13;               // columns
+  const GRID_H = 13;               // rows
+  const ENEMY_SPAWN_MS = 550;      // spawn pace
+  const MAX_ENEMIES = 22;
 
-  const input = {
-    moveQueue: [],
-    atk: { up:false, right:false, down:false, left:false },
-    atkTrigger: 0
+  const WORLD_W = GRID_W * TILE;
+  const WORLD_H = GRID_H * TILE;
+
+  // --- Input state shared between UI and game ---
+  const inputState = {
+    moveQueue: [],       // one-step-per-tap
+    attackQueue: [],     // queued attacks (dx,dy)
   };
 
-  document.querySelectorAll("[data-move]").forEach(b => {
-    b.addEventListener("pointerdown", e => {
-      const [dx,dy] = b.dataset.move.split(",").map(Number);
-      input.moveQueue.push({dx,dy});
-    });
+  // Disable browser gestures / scrolling during play
+  document.addEventListener("touchmove", (e) => e.preventDefault(), { passive: false });
+
+  // Movement wheel buttons
+  document.querySelectorAll("[data-move]").forEach(btn => {
+    btn.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      const [dx, dy] = btn.dataset.move.split(",").map(Number);
+      inputState.moveQueue.push({ dx, dy });
+    }, { passive: false });
   });
 
-  document.querySelectorAll("[data-atk]").forEach(b => {
-    const k = b.dataset.atk;
-    b.addEventListener("pointerdown", e => {
-      input.atk[k] = true;
-      input.atkTrigger++;
-    });
-    b.addEventListener("pointerup", e => input.atk[k]=false);
-    b.addEventListener("pointerleave", e => input.atk[k]=false);
+  // Attack wheel buttons (8 individual directions)
+  document.querySelectorAll("[data-atk]").forEach(btn => {
+    btn.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      const [dx, dy] = btn.dataset.atk.split(",").map(Number);
+      inputState.attackQueue.push({ dx, dy });
+    }, { passive: false });
   });
 
-  document.getElementById("restart").onclick = () => location.reload();
+  // Restart
+  document.getElementById("restart").addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    window.location.reload();
+  }, { passive: false });
 
-  function attackDir(a){
-    const U=a.up,R=a.right,D=a.down,L=a.left;
-    const c=(U+R+D+L);
-    if(c===1){
-      if(U) return {x:0,y:-1};
-      if(R) return {x:1,y:0};
-      if(D) return {x:0,y:1};
-      if(L) return {x:-1,y:0};
-    }
-    if(c===2){
-      if(U&&R) return {x:1,y:-1};
-      if(R&&D) return {x:1,y:1};
-      if(D&&L) return {x:-1,y:1};
-      if(L&&U) return {x:-1,y:-1};
-    }
-    return null;
+  const statusEl = document.getElementById("status");
+  function setStatus(text) { statusEl.textContent = text; }
+
+  // --- Helpers ---
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  function cellKey(x, y) { return `${x},${y}`; }
+  function isAdjacent(dx, dy) {
+    return (dx !== 0 || dy !== 0) && Math.abs(dx) <= 1 && Math.abs(dy) <= 1;
+  }
+  function isEdgeCell(x, y) {
+    return x === 0 || y === 0 || x === GRID_W - 1 || y === GRID_H - 1;
   }
 
-  class Game extends Phaser.Scene {
-    constructor(){
-      super();
-      this.player={x:5,y:8};
-      this.enemies=new Map();
-      this.lastAtk=0;
-      this.kills=0;
+  class MainScene extends Phaser.Scene {
+    constructor() {
+      super("main");
+      this.player = null;
+      this.playerCell = { x: 0, y: 0 };
+      this.enemies = new Map();   // key -> sprite
+      this.kills = 0;
+      this.startTime = 0;
+      this.dead = false;
+
+      this.attackFlash = null;    // graphics reused
     }
 
-    create(){
-      this.add.grid(
-        (GRID_W*TILE)/2,(GRID_H*TILE)/2,
-        GRID_W*TILE,GRID_H*TILE,
-        TILE,TILE,0x1f2a36
+    create() {
+      this.cameras.main.setBackgroundColor("#0b0f14");
+
+      // Make canvas fit the screen (including landscape) while preserving aspect ratio.
+      this.scale.resize(window.innerWidth, window.innerHeight);
+      this.scale.on('resize', (gameSize) => {
+        this.cameras.main.setViewport(0, 0, gameSize.width, gameSize.height);
+        this.cameras.main.centerOn(WORLD_W / 2, WORLD_H / 2);
+      });
+
+      // World camera zoom to fit
+      this.fitWorldToScreen();
+
+      // Grid visuals
+      this.gridGfx = this.add.graphics();
+      this.drawGrid();
+
+      // Player starts center
+      this.playerCell = { x: Math.floor(GRID_W / 2), y: Math.floor(GRID_H / 2) };
+      this.player = this.add.rectangle(
+        this.cellToWorldX(this.playerCell.x),
+        this.cellToWorldY(this.playerCell.y),
+        TILE * 0.70,
+        TILE * 0.70,
+        0x5dd6ff
       );
 
-      this.pRect=this.add.rectangle(0,0,TILE*0.7,TILE*0.7,0x5dd6ff);
-      this.updatePlayer();
+      // Attack flash graphics
+      this.attackFlash = this.add.graphics();
 
+      // Game state
+      this.kills = 0;
+      this.startTime = performance.now();
+      this.dead = false;
+      setStatus(this.statusLine());
+
+      // Spawn timer (edge spawns only)
       this.time.addEvent({
-        delay:700,loop:true,callback:()=>this.spawnEnemy()
+        delay: ENEMY_SPAWN_MS,
+        loop: true,
+        callback: () => {
+          if (!this.dead) this.spawnEnemyEdge();
+        }
       });
     }
 
-    updatePlayer(){
-      this.pRect.setPosition(
-        this.player.x*TILE+TILE/2,
-        this.player.y*TILE+TILE/2
-      );
+    fitWorldToScreen() {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+
+      const scaleX = w / WORLD_W;
+      const scaleY = h / WORLD_H;
+      const s = Math.min(scaleX, scaleY);
+
+      const cam = this.cameras.main;
+      cam.setZoom(s);
+      cam.centerOn(WORLD_W / 2, WORLD_H / 2);
     }
 
-    spawnEnemy(){
-      if(this.enemies.size>15) return;
-      for(let i=0;i<30;i++){
-        const x=Math.floor(Math.random()*GRID_W);
-        const y=Math.floor(Math.random()*GRID_H);
-        const k=`${x},${y}`;
-        if(this.enemies.has(k)) continue;
-        if(x===this.player.x&&y===this.player.y) continue;
-        const r=this.add.rectangle(
-          x*TILE+TILE/2,y*TILE+TILE/2,
-          TILE*0.7,TILE*0.7,0xff5d6c
+    drawGrid() {
+      this.gridGfx.clear();
+      this.gridGfx.lineStyle(1, 0x1f2a36, 1);
+      this.gridGfx.strokeRect(0, 0, WORLD_W, WORLD_H);
+
+      for (let x = 1; x < GRID_W; x++) this.gridGfx.lineBetween(x * TILE, 0, x * TILE, WORLD_H);
+      for (let y = 1; y < GRID_H; y++) this.gridGfx.lineBetween(0, y * TILE, WORLD_W, y * TILE);
+    }
+
+    cellToWorldX(cx) { return cx * TILE + TILE / 2; }
+    cellToWorldY(cy) { return cy * TILE + TILE / 2; }
+
+    statusLine(extra = "") {
+      const t = ((performance.now() - this.startTime) / 1000).toFixed(1);
+      const kps = (this.kills / Math.max(0.001, (performance.now() - this.startTime) / 1000)).toFixed(2);
+      return `Kills: ${this.kills} | Time: ${t}s | KPS: ${kps} | Enemies: ${this.enemies.size}${extra ? " | " + extra : ""}`;
+    }
+
+    // Spawn enemies only on the perimeter
+    spawnEnemyEdge() {
+      if (this.enemies.size >= MAX_ENEMIES) return;
+
+      // Precompute random edge pick: choose a side then coordinate
+      for (let tries = 0; tries < 60; tries++) {
+        const side = Phaser.Math.Between(0, 3); // 0 top, 1 right, 2 bottom, 3 left
+        let x, y;
+        if (side === 0) { x = Phaser.Math.Between(0, GRID_W - 1); y = 0; }
+        else if (side === 1) { x = GRID_W - 1; y = Phaser.Math.Between(0, GRID_H - 1); }
+        else if (side === 2) { x = Phaser.Math.Between(0, GRID_W - 1); y = GRID_H - 1; }
+        else { x = 0; y = Phaser.Math.Between(0, GRID_H - 1); }
+
+        // Avoid player cell
+        if (x === this.playerCell.x && y === this.playerCell.y) continue;
+
+        const k = cellKey(x, y);
+        if (this.enemies.has(k)) continue;
+
+        const enemy = this.add.rectangle(
+          this.cellToWorldX(x),
+          this.cellToWorldY(y),
+          TILE * 0.68,
+          TILE * 0.68,
+          0xff5d6c
         );
-        this.enemies.set(k,r);
+        this.enemies.set(k, enemy);
+        setStatus(this.statusLine());
         return;
       }
     }
 
-    update(){
-      if(input.moveQueue.length){
-        const {dx,dy}=input.moveQueue.shift();
-        const nx=this.player.x+dx;
-        const ny=this.player.y+dy;
-        const k=`${nx},${ny}`;
-        if(this.enemies.has(k)){
-          alert("You died");
-          location.reload();
-        }
-        if(nx>=0&&nx<GRID_W&&ny>=0&&ny<GRID_H){
-          this.player={x:nx,y:ny};
-          this.updatePlayer();
-        }
+    die(reason) {
+      this.dead = true;
+      setStatus(this.statusLine(`DEAD: ${reason}. Tap Restart.`));
+      this.player.setFillStyle(0x3b4b5c);
+    }
+
+    tryMove(dx, dy) {
+      if (this.dead) return;
+      if (!isAdjacent(dx, dy)) return;
+
+      const nx = clamp(this.playerCell.x + dx, 0, GRID_W - 1);
+      const ny = clamp(this.playerCell.y + dy, 0, GRID_H - 1);
+      if (nx === this.playerCell.x && ny === this.playerCell.y) return;
+
+      const k = cellKey(nx, ny);
+      if (this.enemies.has(k)) {
+        // You stepped onto enemy before killing it
+        this.playerCell = { x: nx, y: ny };
+        this.player.setPosition(this.cellToWorldX(nx), this.cellToWorldY(ny));
+        this.die("stepped onto enemy");
+        return;
       }
 
-      if(input.atkTrigger!==this.lastAtk){
-        this.lastAtk=input.atkTrigger;
-        const d=attackDir(input.atk);
-        if(!d) return;
-        const tx=this.player.x+d.x;
-        const ty=this.player.y+d.y;
-        const k=`${tx},${ty}`;
-        if(this.enemies.has(k)){
-          this.enemies.get(k).destroy();
-          this.enemies.delete(k);
-          this.kills++;
+      this.playerCell = { x: nx, y: ny };
+      this.player.setPosition(this.cellToWorldX(nx), this.cellToWorldY(ny));
+      setStatus(this.statusLine());
+    }
+
+    // 1-2 frame-ish attack flash in direction (very short lifetime)
+    playAttackFlash(dx, dy) {
+      const x0 = this.cellToWorldX(this.playerCell.x);
+      const y0 = this.cellToWorldY(this.playerCell.y);
+      const x1 = x0 + dx * TILE * 0.95;
+      const y1 = y0 + dy * TILE * 0.95;
+
+      this.attackFlash.clear();
+      this.attackFlash.lineStyle(6, 0xf7f2a0, 1);
+      this.attackFlash.lineBetween(x0, y0, x1, y1);
+
+      // Fade quickly (about 2 frames at 60hz ~= 33ms; use 45ms to be visible)
+      this.tweens.add({
+        targets: this.attackFlash,
+        alpha: 0,
+        duration: 55,
+        onComplete: () => {
+          this.attackFlash.clear();
+          this.attackFlash.alpha = 1;
         }
+      });
+    }
+
+    tryAttack(dx, dy) {
+      if (this.dead) return;
+      if (!isAdjacent(dx, dy)) return;
+
+      this.playAttackFlash(dx, dy);
+
+      const tx = this.playerCell.x + dx;
+      const ty = this.playerCell.y + dy;
+
+      if (tx < 0 || tx >= GRID_W || ty < 0 || ty >= GRID_H) {
+        setStatus(this.statusLine("Attack: edge"ানি));
+        return;
+      }
+
+      const k = cellKey(tx, ty);
+      const enemy = this.enemies.get(k);
+      if (enemy) {
+        enemy.destroy();
+        this.enemies.delete(k);
+        this.kills += 1;
+        setStatus(this.statusLine("HIT")); 
+      } else {
+        setStatus(this.statusLine("miss")); 
+      }
+    }
+
+    update() {
+      // Fit camera if device rotates
+      // (Phaser resize events can be inconsistent across mobile browsers, so this is a safe backstop)
+      // Only recompute if needed (cheap anyway).
+      // Note: you can remove if you see jitter.
+      // this.fitWorldToScreen();
+
+      if (!this.dead && inputState.moveQueue.length > 0) {
+        const { dx, dy } = inputState.moveQueue.shift();
+        this.tryMove(dx, dy);
+      }
+
+      if (!this.dead && inputState.attackQueue.length > 0) {
+        const { dx, dy } = inputState.attackQueue.shift();
+        this.tryAttack(dx, dy);
       }
     }
   }
 
-  new Phaser.Game({
+  const config = {
     type: Phaser.AUTO,
     parent: "game",
-    width: GRID_W*TILE,
-    height: GRID_H*TILE,
-    scene: Game
+    width: window.innerWidth,
+    height: window.innerHeight,
+    backgroundColor: "#0b0f14",
+    scene: [MainScene],
+    scale: {
+      mode: Phaser.Scale.RESIZE,
+      autoCenter: Phaser.Scale.CENTER_BOTH,
+    }
+  };
+
+  window.addEventListener('resize', () => {
+    // Phaser RESIZE handles this, but calling resize helps some mobile browsers.
+    try {
+      const game = Phaser.GAMES[0];
+      if (game && game.scale) game.scale.resize(window.innerWidth, window.innerHeight);
+    } catch (_) {}
   });
+
+  new Phaser.Game(config);
 })();

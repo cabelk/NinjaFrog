@@ -3,44 +3,43 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>Tap Grid Prototype</title>
+  <title>NinjaFrog Prototype</title>
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
 </head>
 <body>
-  <div id="game-wrap">
+  <div id="app">
     <div id="game"></div>
 
+    <!-- HUD overlay (touch controls) -->
     <div id="hud">
-      <div id="leftPad" class="pad">
-        <button class="btn" data-move="-1,-1">↖</button>
-        <button class="btn" data-move="0,-1">↑</button>
-        <button class="btn" data-move="1,-1">↗</button>
-
-        <button class="btn" data-move="-1,0">←</button>
-        <button class="btn center" disabled>MOVE</button>
-        <button class="btn" data-move="1,0">→</button>
-
-        <button class="btn" data-move="-1,1">↙</button>
-        <button class="btn" data-move="0,1">↓</button>
-        <button class="btn" data-move="1,1">↘</button>
-      </div>
-
-      <div id="rightPad" class="pad">
-        <button class="btn atk" data-atk="up">U</button>
-        <button class="btn atk" data-atk="right">R</button>
-        <button class="btn atk" data-atk="down">D</button>
-        <button class="btn atk" data-atk="left">L</button>
-        <div class="hint">
-          Attack chords:<br>
-          U+R ↗ &nbsp; R+D ↘<br>
-          D+L ↙ &nbsp; L+U ↖
-        </div>
-      </div>
-
       <div id="topBar">
         <div id="status">Loading…</div>
         <button id="restart" class="btn small">Restart</button>
+      </div>
+
+      <!-- Move wheel -->
+      <div id="moveWheel" class="wheel">
+        <button class="btn wheelbtn" data-move="-1,-1" aria-label="move nw">↖</button>
+        <button class="btn wheelbtn" data-move="0,-1"  aria-label="move n">↑</button>
+        <button class="btn wheelbtn" data-move="1,-1"  aria-label="move ne">↗</button>
+        <button class="btn wheelbtn" data-move="1,0"   aria-label="move e">→</button>
+        <button class="btn wheelbtn" data-move="1,1"   aria-label="move se">↘</button>
+        <button class="btn wheelbtn" data-move="0,1"   aria-label="move s">↓</button>
+        <button class="btn wheelbtn" data-move="-1,1"  aria-label="move sw">↙</button>
+        <button class="btn wheelbtn" data-move="-1,0"  aria-label="move w">←</button>
+      </div>
+
+      <!-- Attack wheel (8 individual buttons) -->
+      <div id="attackWheel" class="wheel">
+        <button class="btn wheelbtn atk" data-atk="-1,-1" aria-label="attack nw">↖</button>
+        <button class="btn wheelbtn atk" data-atk="0,-1"  aria-label="attack n">↑</button>
+        <button class="btn wheelbtn atk" data-atk="1,-1"  aria-label="attack ne">↗</button>
+        <button class="btn wheelbtn atk" data-atk="1,0"   aria-label="attack e">→</button>
+        <button class="btn wheelbtn atk" data-atk="1,1"   aria-label="attack se">↘</button>
+        <button class="btn wheelbtn atk" data-atk="0,1"   aria-label="attack s">↓</button>
+        <button class="btn wheelbtn atk" data-atk="-1,1"  aria-label="attack sw">↙</button>
+        <button class="btn wheelbtn atk" data-atk="-1,0"  aria-label="attack w">←</button>
       </div>
     </div>
   </div>
