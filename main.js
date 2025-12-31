@@ -269,9 +269,9 @@ var sprite = this.add.image(0, 0, key);
       this.decorLayer = this.add.layer();
       this.decorLayer.setDepth(5);
       this.entityLayer = this.add.layer();
-      this.entityLayer.setDepth(15);
+      this.entityLayer.setDepth(25);
       this.fxLayer = this.add.layer();
-      this.fxLayer.setDepth(30);
+      this.fxLayer.setDepth(50);
 
 
       // Ensure depth ordering is applied consistently across mobile browsers
@@ -304,7 +304,10 @@ this.scale.resize(window.innerWidth, window.innerHeight);
 
 this.attackFlash = this.add.graphics();
 
-      // Center flash image (hidden)
+      
+      if (this.fxLayer) this.fxLayer.add(this.attackFlash);
+      this.attackFlash.setDepth(1000);
+// Center flash image (hidden)
       const firstKey = this.flashKeys[0] || null;
       this.centerFlash = this.add.image(this.player.x, this.player.y, firstKey);
       this.centerFlash.setVisible(false);
@@ -345,7 +348,12 @@ this.kills = 0;
     statusLine(extra = "") {
       const t = ((performance.now() - this.startTime) / 1000).toFixed(1);
       const kps = (this.kills / Math.max(0.001, (performance.now() - this.startTime) / 1000)).toFixed(2);
-      return `Kills: ${this.kills} | Time: ${t}s | KPS: ${kps} | Enemies: ${this.enemies.size}${extra ? " | " + extra : ""}`;
+      const line1 = `Kills: ${this.kills}`;
+      const line2 = `Time: ${t}s   KPS: ${kps}`;
+      const line3 = `Enemies: ${this.enemies.size}${extra ? "   " + extra : ""}`;
+      return `${line1}
+${line2}
+${line3}`;
     }
 
     spawnEnemyEdge() {
