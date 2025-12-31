@@ -355,23 +355,39 @@ this.kills = 0;
     triggerInhale() {
       if (!this.player) return;
 
+      // Dedicated inhale state so we never interfere with movement/other tweens.
+      if (!this._inhaleState) this._inhaleState = { s: 1 };
+
+      // Stop/cleanup any prior inhale tween only (do NOT kill all tweens on player).
+      if (this._inhaleTween) {
+        try { this._inhaleTween.stop(); } catch (_) {}
+        try { this._inhaleTween.remove(); } catch (_) {}
+        this._inhaleTween = null;
+      }
+
       // Authoritative baseline
+      this._inhaleState.s = 1;
       this.player.setScale(1);
 
-      // Preempt any scale animation on the player so inhale always triggers
-      this.tweens.killTweensOf(this.player);
-
+      // Run inhale as a proxy tween; apply scale in onUpdate.
       this._inhaleTween = this.tweens.add({
-        targets: this.player,
-        scaleX: 1.12,
-        scaleY: 1.12,
+        targets: this._inhaleState,
+        s: 1.12,
         duration: 90,
         ease: "Quad.out",
         yoyo: true,
         hold: 10,
+        onUpdate: () => {
+          if (this.player) this.player.setScale(this._inhaleState.s);
+        },
         onComplete: () => {
+          this._inhaleState.s = 1;
           if (this.player) this.player.setScale(1);
+          this._inhaleTween = null;
         }
+      });
+    }
+
       });
     }
 
