@@ -352,6 +352,30 @@ this.kills = 0;
       this.player.setPosition(this.cellToWorldX(nx), this.cellToWorldY(ny));
       setStatus(this.statusLine());
     }
+    triggerInhale() {
+      if (!this.player) return;
+
+      // Authoritative baseline
+      this.player.setScale(1);
+
+      // Preempt any scale animation on the player so inhale always triggers
+      this.tweens.killTweensOf(this.player);
+
+      this._inhaleTween = this.tweens.add({
+        targets: this.player,
+        scaleX: 1.12,
+        scaleY: 1.12,
+        duration: 90,
+        ease: "Quad.out",
+        yoyo: true,
+        hold: 10,
+        onComplete: () => {
+          if (this.player) this.player.setScale(1);
+        }
+      });
+    }
+
+
 
     
     animateEnemyDeath(enemy) {
@@ -383,27 +407,8 @@ this.kills = 0;
           });
         }
       });
-
-      if (this.player) {
-        // Robust inhale: reuse one tween and restart it so it never "dies" under rapid absorbs
-        // Also force scale back to baseline in case prior overlap left it slightly off.
-        this.player.setScale(1);
-
-        if (!this._inhaleTween) {
-          this._inhaleTween = this.tweens.add({
-            targets: this.player,
-            scaleX: 1.12,
-            scaleY: 1.12,
-            duration: 90,
-            ease: "Quad.out",
-            yoyo: true,
-            hold: 10,
-            paused: true,
-            onComplete: () => {
-              // Guarantee baseline when finishing
-              if (this.player) this.player.setScale(1);
-            }
-          });
+      this.triggerInhale();
+});
         }
 
         // Restart from the beginning every time we absorb an enemy
