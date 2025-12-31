@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>Tap Grid Prototype</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
+</head>
+<body>
+  <div id="game-wrap">
+    <div id="game"></div>
+
+    <div id="hud">
+      <div id="leftPad" class="pad">
+        <button class="btn" data-move="-1,-1">↖</button>
+        <button class="btn" data-move="0,-1">↑</button>
+        <button class="btn" data-move="1,-1">↗</button>
+
+        <button class="btn" data-move="-1,0">←</button>
+        <button class="btn center" disabled>MOVE</button>
+        <button class="btn" data-move="1,0">→</button>
+
+        <button class="btn" data-move="-1,1">↙</button>
+        <button class="btn" data-move="0,1">↓</button>
+        <button class="btn" data-move="1,1">↘</button>
+      </div>
+
+      <div id="rightPad" class="pad">
+        <button class="btn atk" data-atk="up">U</button>
+        <button class="btn atk" data-atk="right">R</button>
+        <button class="btn atk" data-atk="down">D</button>
+        <button class="btn atk" data-atk="left">L</button>
+        <div class="hint">
+          Attack chords:<br>
+          U+R ↗ &nbsp; R+D ↘<br>
+          D+L ↙ &nbsp; L+U ↖
+        </div>
+      </div>
+
+      <div id="topBar">
+        <div id="status">Loading…</div>
+        <button id="restart" class="btn small">Restart</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>
