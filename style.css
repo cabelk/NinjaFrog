@@ -1,0 +1,100 @@
+:root {
+  --btnSize: 56px;
+  --gap: 8px;
+}
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: #0b0f14;
+  color: #fff;
+  font-family: system-ui, sans-serif;
+  touch-action: none;
+}
+
+#game-wrap {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+}
+
+#game {
+  width: 100%;
+  height: 100%;
+}
+
+#hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.pad {
+  position: absolute;
+  bottom: 12px;
+  background: rgba(0,0,0,0.3);
+  padding: 10px;
+  border-radius: 16px;
+  display: grid;
+  gap: var(--gap);
+  pointer-events: auto;
+}
+
+#leftPad {
+  left: 12px;
+  grid-template-columns: repeat(3, var(--btnSize));
+}
+
+#rightPad {
+  right: 12px;
+  grid-template-columns: repeat(2, var(--btnSize));
+}
+
+.btn {
+  width: var(--btnSize);
+  height: var(--btnSize);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.25);
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.btn:active {
+  background: rgba(255,255,255,0.3);
+}
+
+.center {
+  font-size: 12px;
+}
+
+.small {
+  width: auto;
+  height: 38px;
+  padding: 0 14px;
+}
+
+#topBar {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: auto;
+}
+
+#status {
+  background: rgba(0,0,0,0.4);
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 14px;
+}
+
+.hint {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  text-align: center;
+  opacity: 0.8;
+}
