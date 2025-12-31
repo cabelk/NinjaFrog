@@ -76,9 +76,13 @@
     }
 
     preload() {
+      // Player sprite (must exist at images/flash2.png)
+      this.load.image("player", "images/flash2.png");
+
       // Surface asset load failures (common issue on GitHub Pages due to path/case)
       this.load.on('loaderror', (file) => {
-        try { setStatus(`ASSET LOAD ERROR: ${file.key} (${file.src || file.url || ''})`); } catch (_) {}
+        const el = document.getElementById('status');
+        if (el) el.textContent = `ASSET LOAD ERROR: ${file.key} (${file.src || file.url || ''})`;
       });
 
       this.flashKeys = [];
@@ -104,38 +108,47 @@
       this.drawGrid();
 
       this.playerCell = { x: Math.floor(GRID_W / 2), y: Math.floor(GRID_H / 2) };
-      // Player image (fills tile; cropped by mask)
-      this.player = this.add.image(
-        this.cellToWorldX(this.playerCell.x),
-        this.cellToWorldY(this.playerCell.y),
-        "player"
-      );
 
-      // Scale to COVER the tile (crop edges as needed)
-      const targetW = TILE * 0.70;
-      const targetH = TILE * 0.70;
-      const sCover = Math.max(targetW / (this.player.width || 1), targetH / (this.player.height || 1));
-      this.player.setScale(sCover);
+      // Player logical object (container) with a child sprite.
+      const px = this.cellToWorldX(this.playerCell.x);
+      const py = this.cellToWorldY(this.playerCell.y);
 
-      // Mask: crop to the square area (keeps sprite within player tile)
-      this.playerMaskGfx = this.make.graphics();
-      this.playerMaskGfx.fillStyle(0xffffff);
-      this.playerMaskGfx.fillRect(
-        this.player.x - targetW / 2,
-        this.player.y - targetH / 2,
-        targetW,
-        targetH
-      );
-      this.playerMask = this.playerMaskGfx.createGeometryMask();
-      this.player.setMask(this.playerMask);
+      this.player = this.add.container(px, py);
 
-      // If the player texture failed to load, make it obvious
-      if (!this.textures.exists('player') || this.player.width === 0 || this.player.height === 0) {
-        setStatus('PLAYER TEXTURE MISSING: ensure images/flash2.png exists (case-sensitive)');
+      // Player visual (image inside container)
+      if (this.textures.exists('player')) {
+        this.playerSprite = this.add.image(0, 0, "player");
+        this.player.add(this.playerSprite);
+
+        // Target render size within tile (matches prior rectangle sizing)
+        const targetW = TILE * 0.70;
+        const targetH = TILE * 0.70;
+
+        // Scale to COVER the target square (preserve aspect ratio)
+        const texW = this.playerSprite.width || 1;
+        const texH = this.playerSprite.height || 1;
+        const sCover = Math.max(targetW / texW, targetH / texH);
+        this.playerSprite.setScale(sCover);
+        this.playerSprite.setTint(0xffffff);
+        this.playerSprite.setAlpha(1);
+
+        // Crop in TEXTURE space so the visible region is a centered square (edges trimmed)
+        const cropW = targetW / sCover;
+        const cropH = targetH / sCover;
+        const cropX = (texW - cropW) / 2;
+        const cropY = (texH - cropH) / 2;
+        this.playerSprite.setCrop(cropX, cropY, cropW, cropH);
+      } else {
+        // Fallback (should be rare if images/flash2.png is present)
+        const targetW = TILE * 0.70;
+        const targetH = TILE * 0.70;
+        this.playerSprite = this.add.rectangle(0, 0, targetW, targetH, 0xff00ff);
+        this.player.add(this.playerSprite);
+        const el = document.getElementById('status');
+        if (el) el.textContent = 'PLAYER TEXTURE MISSING: ensure images/flash2.png exists (case-sensitive)';
       }
 
-
-      this.attackFlash = this.add.graphics();
+this.attackFlash = this.add.graphics();
 
       // Center flash image (hidden)
       const firstKey = this.flashKeys[0] || null;
@@ -215,7 +228,8 @@ this.kills = 0;
     die(reason) {
       this.dead = true;
       setStatus(this.statusLine(`DEAD: ${reason}. Tap Restart.`));
-      this.player.setTint(0x3b4b5c); this.player.setAlpha(0.85);
+      if (this.playerSprite && this.playerSprite.setTint) { this.playerSprite.setTint(0x3b4b5c); }
+      if (this.playerSprite && this.playerSprite.setAlpha) { this.playerSprite.setAlpha(0.85); }
     }
 
     tryMove(dx, dy) {
