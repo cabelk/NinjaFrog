@@ -147,22 +147,7 @@ this.kills = 0;
       this.time.addEvent({
         delay: ENEMY_SPAWN_MS,
         loop: true,
-        callback: () => { if (!this.dead) this.
-    fitCamera() {
-      const worldW = GRID_W * TILE;
-      const worldH = GRID_H * TILE;
-
-      const vw = this.scale.width;
-      const vh = this.scale.height;
-
-      const zoom = Math.min(vw / worldW, vh / worldH);
-
-      this.fitCamera();
-
-      // Re-fit on resize/rotation
-      this.scale.on('resize', () => this.fitCamera());}
-
-spawnEnemyEdge(); }
+        callback: () => { if (!this.dead) this.spawnEnemyEdge(); }
       });
 
       // Flash initial sprite to indicate starting character image
