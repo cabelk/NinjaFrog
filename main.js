@@ -203,6 +203,17 @@ if (attackPad) {
     }
 
     create() {
+      // Render layers (best-practice ordering)
+      // bgLayer: reserved (water handled by CSS), decorLayer: lilies, entityLayer: player/enemies, fxLayer: flashes/anim FX
+      this.bgLayer = this.add.layer();
+      this.bgLayer.setDepth(0);
+      this.decorLayer = this.add.layer();
+      this.decorLayer.setDepth(5);
+      this.entityLayer = this.add.layer();
+      this.entityLayer.setDepth(10);
+      this.fxLayer = this.add.layer();
+      this.fxLayer.setDepth(20);
+
 this.scale.resize(window.innerWidth, window.innerHeight);
       this.scale.on("resize", (gameSize) => {
         this.cameras.main.setViewport(0, 0, gameSize.width, gameSize.height);
@@ -222,6 +233,7 @@ this.scale.resize(window.innerWidth, window.innerHeight);
           lily.setOrigin(0.5, 0.5);
           lily.setDisplaySize(lilySize, lilySize);
           lily.setDepth(0);
+          this.decorLayer.add(lily);
           lily.setAlpha(0.95);
           lily.setRotation((Math.random() - 0.5) * 0.12);
           if (Math.random() < 0.25) lily.setFlipX(true);
