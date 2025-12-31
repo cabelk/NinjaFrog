@@ -128,14 +128,6 @@ function bindSlidePad(padEl, queue, opts = {}) {
 
 
   document.addEventListener("touchmove", (e) => e.preventDefault(), { passive: false });
-
-  function getViewportSize(){
-    const vv = window.visualViewport;
-    const w = Math.floor(vv && vv.width ? vv.width : window.innerWidth);
-    const h = Math.floor(vv && vv.height ? vv.height : window.innerHeight);
-    return { w, h };
-  }
-
 // Bind slide controls to pads (movement + attack)
 const movePad = document.getElementById("movePad");
 const attackPad = document.getElementById("attackPad");
@@ -209,14 +201,13 @@ if (attackPad) {
     create() {
       this.cameras.main.setBackgroundColor("#0b0f14");
 
-      const vp0 = getViewportSize();
-      this.scale.resize(vp0.w, vp0.h);
+      this.scale.resize(window.innerWidth, window.innerHeight);
       this.scale.on("resize", (gameSize) => {
         this.cameras.main.setViewport(0, 0, gameSize.width, gameSize.height);
         this.fitWorldToScreen(gameSize.width, gameSize.height);
       });
 
-      this.fitWorldToScreen(vp0.w, vp0.h);
+      this.fitWorldToScreen(window.innerWidth, window.innerHeight);
 
       this.gridGfx = this.add.graphics();
       this.drawGrid();
@@ -515,37 +506,17 @@ flashRandomImage() {
   const config = {
     type: Phaser.AUTO,
     parent: "game",
-    width: (window.visualViewport && window.visualViewport.width) ? Math.floor(window.visualViewport.width) : window.innerWidth,
-    height: (window.visualViewport && window.visualViewport.height) ? Math.floor(window.visualViewport.height) : window.innerHeight,
+    width: window.innerWidth,
+    height: window.innerHeight,
     backgroundColor: "#0b0f14",
     scene: [MainScene],
     scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH }
   };
 
-  
-  // Keep layout stable on mobile when the browser URL bar shows/hides
-  if (window.visualViewport) {
-    const onVV = () => {
-      try {
-        const game = Phaser.GAMES[0];
-        if (game && game.scale) {
-          game.scale.resize(Math.floor(window.visualViewport.width), Math.floor(window.visualViewport.height));
-        }
-      } catch (_) {}
-    };
-    window.visualViewport.addEventListener('resize', onVV);
-    window.visualViewport.addEventListener('scroll', onVV);
-  }
-
-window.addEventListener("resize", () => {
+  window.addEventListener("resize", () => {
     try {
       const game = Phaser.GAMES[0];
-      if (game && game.scale) {
-      const vp = (window.visualViewport)
-        ? { w: Math.floor(window.visualViewport.width), h: Math.floor(window.visualViewport.height) }
-        : { w: window.innerWidth, h: window.innerHeight };
-      game.scale.resize(vp.w, vp.h);
-    }
+      if (game && game.scale) game.scale.resize(window.innerWidth, window.innerHeight);
     } catch (_) {}
   });
 
