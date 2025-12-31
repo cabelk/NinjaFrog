@@ -1,11 +1,17 @@
 :root{
-  --btnSize: 58px;
-  --gap: 10px;
+  /* Thumb-biased: cardinals larger, diagonals smaller */
+  --btnSize: 48px;       /* base cell size */
+  --gap: 6px;            /* tighter grid gap */
+  --padInset: 8px;       /* pad interior padding */
   --padBg: rgba(0,0,0,0.22);
   --btnBg: rgba(255,255,255,0.12);
   --btnBgDown: rgba(255,255,255,0.24);
   --text: rgba(255,255,255,0.92);
-  --padRadius: 18px;
+  --padRadius: 16px;
+
+  /* Thumb ergonomics */
+  --diagScale: 0.82;     /* diagonals are harder to hit precisely */
+  --cardScale: 1.10;     /* cardinals are the primary inputs */
 }
 
 html, body {
@@ -26,22 +32,22 @@ html, body {
 
 #topBar {
   position: absolute;
-  top: 10px;
-  left: 10px;
-  right: 10px;
+  top: 8px;
+  left: 8px;
+  right: 8px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
   pointer-events: auto;
 }
 
 #status {
   background: rgba(0,0,0,0.35);
   border: 1px solid rgba(255,255,255,0.14);
-  border-radius: 14px;
-  padding: 8px 12px;
-  font-size: 14px;
+  border-radius: 12px;
+  padding: 6px 10px;
+  font-size: 13px;
   font-weight: 600;
   max-width: 72vw;
   overflow: hidden;
@@ -51,10 +57,10 @@ html, body {
 
 .btn {
   border: 1px solid rgba(255,255,255,0.18);
-  border-radius: 14px;
+  border-radius: 12px;
   background: var(--btnBg);
   color: var(--text);
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 800;
   line-height: 1;
   display: grid;
@@ -63,33 +69,80 @@ html, body {
   user-select: none;
   -webkit-user-select: none;
   pointer-events: auto;
+
+  /* Better thumb feel */
+  -webkit-tap-highlight-color: transparent;
 }
 
 .btn:active { background: var(--btnBgDown); }
-.btn.small { height: 40px; padding: 0 14px; font-size: 14px; border-radius: 12px; }
 
+.btn.small {
+  height: 34px;
+  padding: 0 12px;
+  font-size: 13px;
+  border-radius: 10px;
+}
+
+/* Control pads */
 .pad3{
   position: absolute;
-  bottom: 14px;
-  width: calc(var(--btnSize)*3 + var(--gap)*2 + 20px);
-  height: calc(var(--btnSize)*3 + var(--gap)*2 + 20px);
-  padding: 10px;
+
+  /* Safe-area aware (phones with gesture bars/notches) */
+  bottom: calc(10px + env(safe-area-inset-bottom));
+  width: calc(var(--btnSize)*3 + var(--gap)*2 + (var(--padInset)*2));
+  height: calc(var(--btnSize)*3 + var(--gap)*2 + (var(--padInset)*2));
+  padding: var(--padInset);
+
   background: var(--padBg);
   border-radius: var(--padRadius);
+
   display: grid;
   grid-template-columns: repeat(3, var(--btnSize));
   grid-template-rows: repeat(3, var(--btnSize));
   gap: var(--gap);
+
   pointer-events: auto;
 }
 
-#movePad { left: 14px; }
-#attackPad { right: 14px; }
+/* Thumb-biased placement */
+#movePad  { left:  calc(10px + env(safe-area-inset-left)); }
+#attackPad{ right: calc(10px + env(safe-area-inset-right)); }
 
-.padbtn{ width: var(--btnSize); height: var(--btnSize); border-radius: 18px; }
+.padbtn{
+  width: var(--btnSize);
+  height: var(--btnSize);
+  border-radius: 14px;
+
+  transform-origin: 50% 50%;
+  transition: transform 70ms ease-out, background 70ms ease-out;
+}
+
+/* Larger cardinal directions (easier thumb flicks) */
+#movePad  [data-move="0,-1"],
+#movePad  [data-move="0,1"],
+#movePad  [data-move="-1,0"],
+#movePad  [data-move="1,0"],
+#attackPad [data-atk="0,-1"],
+#attackPad [data-atk="0,1"],
+#attackPad [data-atk="-1,0"],
+#attackPad [data-atk="1,0"]{
+  transform: scale(var(--cardScale));
+}
+
+/* Smaller diagonals (reduce accidental diagonal hits) */
+#movePad  [data-move="-1,-1"],
+#movePad  [data-move="1,-1"],
+#movePad  [data-move="-1,1"],
+#movePad  [data-move="1,1"],
+#attackPad [data-atk="-1,-1"],
+#attackPad [data-atk="1,-1"],
+#attackPad [data-atk="-1,1"],
+#attackPad [data-atk="1,1"]{
+  transform: scale(var(--diagScale));
+}
 
 .pad-center{
-  border-radius: 18px;
+  border-radius: 14px;
   border: 1px dashed rgba(255,255,255,0.12);
   background: rgba(255,255,255,0.04);
 }
@@ -97,21 +150,39 @@ html, body {
 .atk-center{
   display: grid;
   place-items: center;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 900;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.10em;
   opacity: 0.75;
 }
 
+/* Landscape: tighten */
 @media (orientation: landscape){
-  :root{ --btnSize: 52px; --gap: 8px; }
+  :root{
+    --btnSize: 44px;
+    --gap: 5px;
+    --padInset: 7px;
+    --diagScale: 0.80;
+    --cardScale: 1.08;
+  }
+
   #status{ max-width: 58vw; }
+
+  #movePad  { left:  calc(8px + env(safe-area-inset-left)); }
+  #attackPad{ right: calc(8px + env(safe-area-inset-right)); }
+  .pad3{ bottom: calc(8px + env(safe-area-inset-bottom)); }
 }
 
+/* Very small screens */
 @media (max-width: 380px){
-  :root{ --btnSize: 46px; --gap: 7px; }
+  :root{
+    --btnSize: 40px;
+    --gap: 4px;
+    --padInset: 6px;
+    --diagScale: 0.78;
+    --cardScale: 1.06;
+  }
 }
-
 
 /* Ensure on-screen controls receive taps; canvas should not intercept pointer events */
 #game canvas { pointer-events: none; }
