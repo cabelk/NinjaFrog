@@ -11,35 +11,41 @@
   <div id="app">
     <div id="game"></div>
 
-    <!-- HUD overlay (touch controls) -->
+    <!-- HUD overlay -->
     <div id="hud">
       <div id="topBar">
         <div id="status">Loading…</div>
         <button id="restart" class="btn small">Restart</button>
       </div>
 
-      <!-- Move wheel -->
-      <div id="moveWheel" class="wheel">
-        <button class="btn wheelbtn" data-move="-1,-1" aria-label="move nw">↖</button>
-        <button class="btn wheelbtn" data-move="0,-1"  aria-label="move n">↑</button>
-        <button class="btn wheelbtn" data-move="1,-1"  aria-label="move ne">↗</button>
-        <button class="btn wheelbtn" data-move="1,0"   aria-label="move e">→</button>
-        <button class="btn wheelbtn" data-move="1,1"   aria-label="move se">↘</button>
-        <button class="btn wheelbtn" data-move="0,1"   aria-label="move s">↓</button>
-        <button class="btn wheelbtn" data-move="-1,1"  aria-label="move sw">↙</button>
-        <button class="btn wheelbtn" data-move="-1,0"  aria-label="move w">←</button>
+      <!-- Bottom-left: movement pad (3x3 with empty center) -->
+      <div id="movePad" class="pad3">
+        <button class="btn padbtn" data-move="-1,-1" aria-label="move nw">↖</button>
+        <button class="btn padbtn" data-move="0,-1"  aria-label="move n">↑</button>
+        <button class="btn padbtn" data-move="1,-1"  aria-label="move ne">↗</button>
+
+        <button class="btn padbtn" data-move="-1,0"  aria-label="move w">←</button>
+        <div class="pad-center" aria-hidden="true"></div>
+        <button class="btn padbtn" data-move="1,0"   aria-label="move e">→</button>
+
+        <button class="btn padbtn" data-move="-1,1"  aria-label="move sw">↙</button>
+        <button class="btn padbtn" data-move="0,1"   aria-label="move s">↓</button>
+        <button class="btn padbtn" data-move="1,1"   aria-label="move se">↘</button>
       </div>
 
-      <!-- Attack wheel (8 individual buttons) -->
-      <div id="attackWheel" class="wheel">
-        <button class="btn wheelbtn atk" data-atk="-1,-1" aria-label="attack nw">↖</button>
-        <button class="btn wheelbtn atk" data-atk="0,-1"  aria-label="attack n">↑</button>
-        <button class="btn wheelbtn atk" data-atk="1,-1"  aria-label="attack ne">↗</button>
-        <button class="btn wheelbtn atk" data-atk="1,0"   aria-label="attack e">→</button>
-        <button class="btn wheelbtn atk" data-atk="1,1"   aria-label="attack se">↘</button>
-        <button class="btn wheelbtn atk" data-atk="0,1"   aria-label="attack s">↓</button>
-        <button class="btn wheelbtn atk" data-atk="-1,1"  aria-label="attack sw">↙</button>
-        <button class="btn wheelbtn atk" data-atk="-1,0"  aria-label="attack w">←</button>
+      <!-- Bottom-right: attack pad (3x3 with empty center) -->
+      <div id="attackPad" class="pad3">
+        <button class="btn padbtn atk" data-atk="-1,-1" aria-label="attack nw">↖</button>
+        <button class="btn padbtn atk" data-atk="0,-1"  aria-label="attack n">↑</button>
+        <button class="btn padbtn atk" data-atk="1,-1"  aria-label="attack ne">↗</button>
+
+        <button class="btn padbtn atk" data-atk="-1,0"  aria-label="attack w">←</button>
+        <div class="pad-center atk-center" aria-hidden="true">ATK</div>
+        <button class="btn padbtn atk" data-atk="1,0"   aria-label="attack e">→</button>
+
+        <button class="btn padbtn atk" data-atk="-1,1"  aria-label="attack sw">↙</button>
+        <button class="btn padbtn atk" data-atk="0,1"   aria-label="attack s">↓</button>
+        <button class="btn padbtn atk" data-atk="1,1"   aria-label="attack se">↘</button>
       </div>
     </div>
   </div>

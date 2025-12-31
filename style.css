@@ -1,13 +1,11 @@
-:root {
+:root{
   --btnSize: 58px;
   --gap: 10px;
   --padBg: rgba(0,0,0,0.22);
   --btnBg: rgba(255,255,255,0.12);
   --btnBgDown: rgba(255,255,255,0.24);
   --text: rgba(255,255,255,0.92);
-
-  /* wheel geometry */
-  --wheelSize: 220px;
+  --padRadius: 18px;
 }
 
 html, body {
@@ -28,15 +26,7 @@ html, body {
   overflow: hidden;
 }
 
-#game {
-  position: absolute;
-  inset: 0;
-}
-
-canvas {
-  /* Phaser will size the canvas; make sure it stays crisp */
-  image-rendering: pixelated;
-}
+#game { position:absolute; inset:0; }
 
 #hud {
   position: absolute;
@@ -74,8 +64,8 @@ canvas {
   border-radius: 14px;
   background: var(--btnBg);
   color: var(--text);
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 20px;
+  font-weight: 800;
   line-height: 1;
   display: grid;
   place-items: center;
@@ -94,55 +84,59 @@ canvas {
   border-radius: 12px;
 }
 
-/* Wheels */
-.wheel {
+/* 3x3 Pads (intuitive directional layout) */
+.pad3{
   position: absolute;
   bottom: 14px;
-  width: var(--wheelSize);
-  height: var(--wheelSize);
-  border-radius: 999px;
+  width: calc(var(--btnSize)*3 + var(--gap)*2 + 20px);
+  height: calc(var(--btnSize)*3 + var(--gap)*2 + 20px);
+  padding: 10px;
   background: var(--padBg);
+  border-radius: var(--padRadius);
+  display: grid;
+  grid-template-columns: repeat(3, var(--btnSize));
+  grid-template-rows: repeat(3, var(--btnSize));
+  gap: var(--gap);
   pointer-events: auto;
-  user-select: none;
-  -webkit-user-select: none;
 }
 
-#wheelHint { display:none; }
+#movePad { left: 14px; }
+#attackPad { right: 14px; }
 
-#moveWheel { left: 14px; }
-#attackWheel { right: 14px; }
-
-.wheelbtn {
+.padbtn{
   width: var(--btnSize);
   height: var(--btnSize);
-  border-radius: 999px;
-  font-size: 20px;
-  position: absolute;
+  border-radius: 18px;
 }
 
-/* Place 8 buttons around the wheel */
-.wheelbtn:nth-child(1) { left: 16%; top: 16%; }   /* NW */
-.wheelbtn:nth-child(2) { left: 50%; top: 6%; transform: translateX(-50%); } /* N */
-.wheelbtn:nth-child(3) { right: 16%; top: 16%; }  /* NE */
-.wheelbtn:nth-child(4) { right: 6%; top: 50%; transform: translateY(-50%); } /* E */
-.wheelbtn:nth-child(5) { right: 16%; bottom: 16%; } /* SE */
-.wheelbtn:nth-child(6) { left: 50%; bottom: 6%; transform: translateX(-50%); } /* S */
-.wheelbtn:nth-child(7) { left: 16%; bottom: 16%; } /* SW */
-.wheelbtn:nth-child(8) { left: 6%; top: 50%; transform: translateY(-50%); } /* W */
+.pad-center{
+  border-radius: 18px;
+  border: 1px dashed rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+}
 
-/* Landscape tuning */
-@media (orientation: landscape) {
-  :root {
-    --wheelSize: 200px;
-    --btnSize: 54px;
+.atk-center{
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  opacity: 0.75;
+}
+
+/* Landscape: slightly smaller pads so battlefield has more room */
+@media (orientation: landscape){
+  :root{
+    --btnSize: 52px;
+    --gap: 8px;
   }
-  #status { max-width: 58vw; }
+  #status{ max-width: 58vw; }
 }
 
-/* Small screens */
-@media (max-width: 380px) {
-  :root {
-    --wheelSize: 180px;
-    --btnSize: 48px;
+/* Small phones */
+@media (max-width: 380px){
+  :root{
+    --btnSize: 46px;
+    --gap: 7px;
   }
 }
