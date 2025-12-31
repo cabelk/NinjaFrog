@@ -19,7 +19,7 @@
   const FLASH_IMAGES = [
     "images/flash1.png",
     "images/flash2.png",
-    "images/flash3.png",
+    "images/flash3.png"
   ];
 
   const WORLD_W = GRID_W * TILE;
@@ -77,7 +77,7 @@
       this.killTimes = [];
       this.centerFlash = null;
       this.flashGrowTween = null;
-      this.flashKeys = [];
+      this.flashKeys = []; // rebuilt from FLASH_IMAGES every load
     }
 
     preload() {
@@ -90,15 +90,12 @@
         if (el) el.textContent = `ASSET LOAD ERROR: ${file.key} (${file.src || file.url || ''})`;
       });
 
-      this.flashKeys = [];
+      this.flashKeys = []; // rebuilt from FLASH_IMAGES every load
       for (const p of FLASH_IMAGES) {
         const k = keyForImagePath(p);
         this.flashKeys.push(k);
         this.load.image(k, p);
       }
-
-      // Fallback: allow flashing even if an image fails to load
-      if (!this.flashKeys.includes("player")) this.flashKeys.push("player");
     }
 
     create() {
@@ -296,7 +293,7 @@ this.kills = 0;
 flashRandomImage() {
       if (!this.flashKeys.length || !this.centerFlash) return;
 
-      const key = Phaser.Utils.Array.GetRandom(this.flashKeys);
+      const key = Phaser.Utils.Array.GetRandom(this.flashKeys); // uniform random over all flash images
 
       // Flash + adopt instantly
       this.updatePlayerSpriteTexture(key);
