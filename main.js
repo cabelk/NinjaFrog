@@ -96,6 +96,9 @@
         this.flashKeys.push(k);
         this.load.image(k, p);
       }
+
+      // Fallback: allow flashing even if an image fails to load
+      if (!this.flashKeys.includes("player")) this.flashKeys.push("player");
     }
 
     create() {
