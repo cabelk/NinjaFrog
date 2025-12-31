@@ -540,8 +540,12 @@ flashRandomImage() {
 window.addEventListener("resize", () => {
     try {
       const game = Phaser.GAMES[0];
-      if (game && game.scale) const vp = (window.visualViewport) ? { w: Math.floor(window.visualViewport.width), h: Math.floor(window.visualViewport.height) } : { w: window.innerWidth, h: window.innerHeight };
+      if (game && game.scale) {
+      const vp = (window.visualViewport)
+        ? { w: Math.floor(window.visualViewport.width), h: Math.floor(window.visualViewport.height) }
+        : { w: window.innerWidth, h: window.innerHeight };
       game.scale.resize(vp.w, vp.h);
+    }
     } catch (_) {}
   });
 
