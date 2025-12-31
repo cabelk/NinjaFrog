@@ -364,7 +364,33 @@ this.kills = 0;
       setStatus(this.statusLine());
     }
 
-    playAttackFlash(dx, dy) {
+    
+    animateEnemyDeath(enemy) {
+      if (!enemy || !enemy.scene) return;
+      if (enemy._dying) return;
+      enemy._dying = true;
+
+      enemy.setScale(1);
+      enemy.setDepth(50);
+
+      this.tweens.add({
+        targets: enemy,
+        scale: 1.18,
+        duration: 70,
+        ease: "Quad.out",
+        onComplete: () => {
+          this.tweens.add({
+            targets: enemy,
+            scale: 0,
+            duration: 90,
+            ease: "Quad.in",
+            onComplete: () => enemy.destroy()
+          });
+        }
+      });
+    }
+
+playAttackFlash(dx, dy) {
       const x0 = this.cellToWorldX(this.playerCell.x);
       const y0 = this.cellToWorldY(this.playerCell.y);
       const x1 = x0 + dx * TILE * 0.95;
@@ -484,8 +510,8 @@ flashRandomImage() {
       const k = cellKey(tx, ty);
       const enemy = this.enemies.get(k);
       if (enemy) {
-        enemy.destroy();
         this.enemies.delete(k);
+        this.animateEnemyDeath(enemy);
         this.kills += 1;
         this.recordKillAndMaybeFlash();
         setStatus(this.statusLine("HIT"));
