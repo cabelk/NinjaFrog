@@ -150,7 +150,16 @@ if (attackPad) {
     window.location.reload();
   }, { passive: false });
 
-  const statusEl = document.getElementById("status");
+  
+  const restartOverlayBtn = document.getElementById("restartOverlay");
+  if (restartOverlayBtn) {
+    restartOverlayBtn.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      window.location.reload();
+    }, { passive: false });
+  }
+
+const statusEl = document.getElementById("status");
   const setStatus = (t) => statusEl.textContent = t;
 
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));

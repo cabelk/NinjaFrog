@@ -251,6 +251,8 @@ html, body {
 }
 
 #restartOverlay{
+  pointer-events: auto;
+
   margin-top: 14px;
   padding: 14px 18px;
   font-size: 18px;
@@ -259,6 +261,8 @@ html, body {
   justify-content: center;
 }
 
-#restartOverlay{ pointer-events: auto; }
+#restartOverlay{
+  pointer-events: auto;
+ pointer-events: auto; }
 
 #restart{ display:none !important; }
