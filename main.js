@@ -428,15 +428,6 @@ this.dead = false;
           textEl.textContent = `Game Over\nKills: ${kills}\nKPS: ${kps.toFixed(2)}${badge}`;
 
 
-    
-
-
-          const topRestart = document.getElementById("restart");
-
-
-          if (topRestart) topRestart.style.display = "none";
-
-
           const overlayRestart = document.getElementById("restartOverlay");
 
 
@@ -458,15 +449,6 @@ this.dead = false;
 
 
           if (textEl) textEl.textContent = "";
-
-
-    
-
-
-          const topRestart = document.getElementById("restart");
-
-
-          if (topRestart) topRestart.style.display = "inline-flex";
 
 
           const overlayRestart = document.getElementById("restartOverlay");
