@@ -50,95 +50,96 @@ function directionFromDelta(dx, dy, deadZone = 12) {
   return dirs[oct];
 }
 
-function bindSlidePad(padEl, queue) {
+function bindSlidePad(padEl, queue, opts = {}) {
+  const deadZone = Number.isFinite(opts.deadZone) ? opts.deadZone : 12;
+  const cooldownMs = Number.isFinite(opts.cooldownMs) ? opts.cooldownMs : 0;
+
   let active = false;
-  let lastDirKey = null;
+  let lastDir = null;
   let rect = null;
+  let lastEmitAt = 0;
+  let pointerId = null;
 
-  const getCenter = () => {
-    // Recompute occasionally to survive mobile address bar / orientation changes
-    rect = padEl.getBoundingClientRect();
-    return {
-      cx: rect.left + rect.width / 2,
-      cy: rect.top + rect.height / 2
-    };
-  };
+  const computeAndMaybeEmit = (clientX, clientY, force = false) => {
+    if (!rect) return;
 
-  const pushIfChanged = (dx, dy) => {
-    const key = `${dx},${dy}`;
-    if (key === lastDirKey) return;
-    queue.push({ dx, dy });
-    lastDirKey = key;
-  };
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
 
-  const handle = (e) => {
-    if (!active) return;
+    const dx = clientX - cx;
+    const dy = clientY - cy;
 
-    const { cx, cy } = rect ? { cx: rect.left + rect.width / 2, cy: rect.top + rect.height / 2 } : getCenter();
-    const dx = e.clientX - cx;
-    const dy = e.clientY - cy;
-
-    const dir = directionFromDelta(dx, dy);
+    const dir = directionFromDelta(dx, dy, deadZone);
     if (!dir) return;
 
-    pushIfChanged(dir[0], dir[1]);
+    const [x, y] = dir;
+    const key = `${x},${y}`;
+
+    const now = performance.now();
+    const cooldownOk = force || cooldownMs <= 0 || (now - lastEmitAt) >= cooldownMs;
+
+    if (key !== lastDir && cooldownOk) {
+      queue.push({ dx: x, dy: y });
+      lastDir = key;
+      lastEmitAt = now;
+    }
   };
 
-  const start = (e) => {
+  const onDown = (e) => {
     e.preventDefault();
+    rect = padEl.getBoundingClientRect();
     active = true;
-    lastDirKey = null;
-    getCenter();
+    lastDir = null;
+    lastEmitAt = 0;
+    pointerId = e.pointerId;
 
-    // Some mobile browsers are picky about setPointerCapture; fail gracefully.
-    try { padEl.setPointerCapture(e.pointerId); } catch (_) {}
+    try { padEl.setPointerCapture(pointerId); } catch (_) {}
 
-    // Allow immediate activation on press (no need to move first)
-    handle(e);
+    // Immediate action on down
+    computeAndMaybeEmit(e.clientX, e.clientY, true);
   };
 
-  const move = (e) => {
+  const onMove = (e) => {
     if (!active) return;
     e.preventDefault();
-    handle(e);
+    if (pointerId !== null && e.pointerId !== pointerId) return;
+    computeAndMaybeEmit(e.clientX, e.clientY, false);
   };
 
   const stop = (e) => {
-    if (!active) return;
     active = false;
-    lastDirKey = null;
-    try { padEl.releasePointerCapture(e.pointerId); } catch (_) {}
+    lastDir = null;
+    rect = null;
+    try {
+      if (pointerId !== null) padEl.releasePointerCapture(pointerId);
+    } catch (_) {}
+    pointerId = null;
   };
 
-  // Capture phase ensures we see events even if a child button is the target.
-  padEl.addEventListener("pointerdown", start, { passive: false, capture: true });
-  padEl.addEventListener("pointermove", move,  { passive: false, capture: true });
-  padEl.addEventListener("pointerup", stop,    { passive: false, capture: true });
-  padEl.addEventListener("pointercancel", stop,{ passive: false, capture: true });
+  // Capture-phase to receive events even when starting on child buttons.
+  padEl.addEventListener("pointerdown", onDown, { passive: false, capture: true });
+  padEl.addEventListener("pointermove", onMove, { passive: false, capture: true });
 
-  // Safety: if the pointer leaves the pad without a cancel, stop.
-  padEl.addEventListener("lostpointercapture", () => { active = false; lastDirKey = null; }, { passive: true });
+  padEl.addEventListener("pointerup", stop, { passive: true, capture: true });
+  padEl.addEventListener("pointercancel", stop, { passive: true, capture: true });
+  padEl.addEventListener("lostpointercapture", stop, { passive: true, capture: true });
 }
 // ================================================
 
 
   document.addEventListener("touchmove", (e) => e.preventDefault(), { passive: false });
-  // Move pad: tap-only directional input (slide disabled for movement)
-  document.querySelectorAll("[data-move]").forEach(btn => {
-    btn.addEventListener("pointerdown", (e) => {
-      e.preventDefault();
-      const [dx, dy] = btn.dataset.move.split(",").map(Number);
-      inputState.moveQueue.push({ dx, dy });
-    }, { passive: false });
-  });
-
-
-
 // Bind slide controls to pads (movement + attack)
 const movePad = document.getElementById("movePad");
 const attackPad = document.getElementById("attackPad");
-/* Move pad: TAP controls (no slide) */
-if (attackPad) bindSlidePad(attackPad, inputState.attackQueue);
+
+if (movePad) {
+  // Move pad: slide enabled with small delay between moves (easier control)
+  bindSlidePad(movePad, inputState.moveQueue, { cooldownMs: MOVE_COOLDOWN_MS });
+}
+if (attackPad) {
+  // Attack pad: slide enabled (no delay; keep responsive)
+  bindSlidePad(attackPad, inputState.attackQueue);
+}
 
 
   document.getElementById("restart").addEventListener("pointerdown", (e) => {
