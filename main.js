@@ -8,7 +8,7 @@
   // Reward flash settings
   const FLASH_KILLS_REQUIRED = 5;
   const FLASH_WINDOW_MS = 3600000; // 1 hour window (effectively no time limit)
-  const FLASH_DURATION_MS = 100;   // ~6 frames at 60Hz
+  const FLASH_DURATION_MS = 150;   // ~9 frames at 60Hz (50% longer)   // ~6 frames at 60Hz
   const FLASH_SCALE = 0.55;
 
   // Put your images in /images and list them here.
@@ -76,6 +76,11 @@
     }
 
     preload() {
+      // Surface asset load failures (common issue on GitHub Pages due to path/case)
+      this.load.on('loaderror', (file) => {
+        try { setStatus(`ASSET LOAD ERROR: ${file.key} (${file.src || file.url || ''})`); } catch (_) {}
+      });
+
       this.flashKeys = [];
       for (const p of FLASH_IMAGES) {
         const k = keyForImagePath(p);
@@ -99,23 +104,50 @@
       this.drawGrid();
 
       this.playerCell = { x: Math.floor(GRID_W / 2), y: Math.floor(GRID_H / 2) };
-      this.player = this.add.rectangle(
+      // Player image (fills tile; cropped by mask)
+      this.player = this.add.image(
         this.cellToWorldX(this.playerCell.x),
         this.cellToWorldY(this.playerCell.y),
-        TILE * 0.70,
-        TILE * 0.70,
-        0x5dd6ff
+        "player"
       );
+
+      // Scale to COVER the tile (crop edges as needed)
+      const targetW = TILE * 0.70;
+      const targetH = TILE * 0.70;
+      const sCover = Math.max(targetW / (this.player.width || 1), targetH / (this.player.height || 1));
+      this.player.setScale(sCover);
+
+      // Mask: crop to the square area (keeps sprite within player tile)
+      this.playerMaskGfx = this.make.graphics();
+      this.playerMaskGfx.fillStyle(0xffffff);
+      this.playerMaskGfx.fillRect(
+        this.player.x - targetW / 2,
+        this.player.y - targetH / 2,
+        targetW,
+        targetH
+      );
+      this.playerMask = this.playerMaskGfx.createGeometryMask();
+      this.player.setMask(this.playerMask);
+
+      // If the player texture failed to load, make it obvious
+      if (!this.textures.exists('player') || this.player.width === 0 || this.player.height === 0) {
+        setStatus('PLAYER TEXTURE MISSING: ensure images/flash2.png exists (case-sensitive)');
+      }
+
 
       this.attackFlash = this.add.graphics();
 
       // Center flash image (hidden)
       const firstKey = this.flashKeys[0] || null;
-      this.centerFlash = this.add.image(this.cellToWorldX(this.playerCell.x), this.cellToWorldY(this.playerCell.y), firstKey);
+      this.centerFlash = this.add.image(this.player.x, this.player.y, firstKey);
       this.centerFlash.setVisible(false);
       this.centerFlash.setDepth(9999);
 
-      this.kills = 0;
+      
+      // Ensure flash is WORLD-SPACE (moves with camera) and centered on its texture
+      this.centerFlash.setScrollFactor(1);
+      this.centerFlash.setOrigin(0.5, 0.5);
+this.kills = 0;
       this.startTime = performance.now();
       this.dead = false;
       setStatus(this.statusLine());
@@ -183,7 +215,7 @@
     die(reason) {
       this.dead = true;
       setStatus(this.statusLine(`DEAD: ${reason}. Tap Restart.`));
-      this.player.setFillStyle(0x3b4b5c);
+      this.player.setTint(0x3b4b5c); this.player.setAlpha(0.85);
     }
 
     tryMove(dx, dy) {
@@ -240,15 +272,23 @@
 
       this.centerFlash.setTexture(key);
 
-      // Anchor flash at the player's current cell center (keeps attention on the avatar)
-      this.centerFlash.setPosition(this.cellToWorldX(this.playerCell.x), this.cellToWorldY(this.playerCell.y));
+      // Anchor flash at the player's rectangle center (keeps attention on the avatar)
+      this.centerFlash.setPosition(this.player.x, this.player.y);
       this.centerFlash.setVisible(true);
       this.centerFlash.setAlpha(0.98);
 
       const w = this.centerFlash.width || 1;
       const h = this.centerFlash.height || 1;
       const s = target / Math.max(w, h);
-      this.centerFlash.setScale(s);
+      this.centerFlash.setScale(s * 0.90);
+
+      // Pop animation (quick scale-in to full size)
+      this.tweens.add({
+        targets: this.centerFlash,
+        scale: s,
+        duration: 30,
+        ease: "Quad.out"
+      });
 
       this.time.delayedCall(FLASH_DURATION_MS, () => {
         if (this.centerFlash) this.centerFlash.setVisible(false);
