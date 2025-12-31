@@ -202,6 +202,8 @@ if (attackPad) {
     }
 
     create() {
+      this.cameras.main.setBackgroundColor("#0b0f14");
+
       this.scale.resize(window.innerWidth, window.innerHeight);
       this.scale.on("resize", (gameSize) => {
         this.cameras.main.setViewport(0, 0, gameSize.width, gameSize.height);
@@ -533,10 +535,10 @@ flashRandomImage() {
   const config = {
     type: Phaser.AUTO,
     parent: "game",
-    transparent: true,
     width: window.innerWidth,
     height: window.innerHeight,
-scene: [MainScene],
+    backgroundColor: "#0b0f14",
+    scene: [MainScene],
     scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH }
   };
 
