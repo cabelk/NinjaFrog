@@ -1,14 +1,62 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ninja Frog Web Prototype</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>NinjaFrog Prototype</title>
   <link rel="stylesheet" href="style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
 </head>
 <body>
-  <div id="game-container"></div>
-  <script src="main.js"></script>
+  <script>
+    (function(){
+      function showErr(msg){
+        var el=document.getElementById('status');
+        if(el) el.textContent = 'ERROR: ' + msg;
+      }
+      window.addEventListener('error', function(e){ showErr(e.message || e.error || 'unknown'); });
+      window.addEventListener('unhandledrejection', function(e){ showErr((e.reason && e.reason.message) ? e.reason.message : String(e.reason)); });
+    })();
+  </script>
+  <div id="app">
+    <div id="game"></div>
+
+    <div id="hud">
+      <div id="topBar">
+        <div id="status">Loading…</div>
+        <button id="restart" class="btn small">Restart</button>
+      </div>
+
+      <div id="movePad" class="pad3">
+        <button class="btn padbtn" data-move="-1,-1" aria-label="move nw">↖</button>
+        <button class="btn padbtn" data-move="0,-1"  aria-label="move n">↑</button>
+        <button class="btn padbtn" data-move="1,-1"  aria-label="move ne">↗</button>
+
+        <button class="btn padbtn" data-move="-1,0"  aria-label="move w">←</button>
+        <div class="pad-center" aria-hidden="true"></div>
+        <button class="btn padbtn" data-move="1,0"   aria-label="move e">→</button>
+
+        <button class="btn padbtn" data-move="-1,1"  aria-label="move sw">↙</button>
+        <button class="btn padbtn" data-move="0,1"   aria-label="move s">↓</button>
+        <button class="btn padbtn" data-move="1,1"   aria-label="move se">↘</button>
+      </div>
+
+      <div id="attackPad" class="pad3">
+        <button class="btn padbtn atk" data-atk="-1,-1" aria-label="attack nw">↖</button>
+        <button class="btn padbtn atk" data-atk="0,-1"  aria-label="attack n">↑</button>
+        <button class="btn padbtn atk" data-atk="1,-1"  aria-label="attack ne">↗</button>
+
+        <button class="btn padbtn atk" data-atk="-1,0"  aria-label="attack w">←</button>
+        <div class="pad-center atk-center" aria-hidden="true">ATK</div>
+        <button class="btn padbtn atk" data-atk="1,0"   aria-label="attack e">→</button>
+
+        <button class="btn padbtn atk" data-atk="-1,1"  aria-label="attack sw">↙</button>
+        <button class="btn padbtn atk" data-atk="0,1"   aria-label="attack s">↓</button>
+        <button class="btn padbtn atk" data-atk="1,1"   aria-label="attack se">↘</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="main.js?v=20251231_21"></script>
 </body>
 </html>

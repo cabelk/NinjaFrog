@@ -1,167 +1,416 @@
-const GRID_COLS = 6;
-const GRID_ROWS = 5;
-const MAX_ENEMIES = 6;
+(() => {
+  const TILE = 72; // doubled tile size (larger squares)
+  const TILE_INSET = 0.01; // 1% padding per side inside each tile (very tight)
+  const ENTITY_SIZE = TILE * (1 - TILE_INSET * 2); // size of sprites/enemies inside a tile // doubled tile size (larger squares)
+  const GRID_W = 6; // 13 -> remove 2 rows (13x11) then halve columns -> 6 // 13 -> remove 2 rows (13x11) then halve columns -> 6
+  const GRID_H = 5; // 13 -> 11 -> halve rows -> 5 // 13 -> 11 -> halve rows -> 5
+  const ENEMY_SPAWN_MS = 550;
+  const MAX_ENEMIES = 10;
 
-class GameScene extends Phaser.Scene {
-  constructor() {
-    super('GameScene');
-  }
+  // Reward flash settings
+  const FLASH_KILLS_REQUIRED = 5;
+  const FLASH_WINDOW_MS = 3600000; // 1 hour window (effectively no time limit)
+  const FLASH_DURATION_MS = 150;   // ~9 frames at 60Hz (50% longer)   // ~6 frames at 60Hz
+  const FLASH_SCALE = 0.55;
 
-  preload() {
-    this.load.image('flash1', 'images/flash1.png');
-    this.load.image('flash2', 'images/flash2.png');
-    this.load.image('flash3', 'images/flash3.png');
-    this.load.image('enemy_fly', 'images/fly.png');
-  }
+  // Put your images in /images and list them here.
+  const INITIAL_PLAYER_KEY = "flash_flash2";
 
-  create() {
-    this.enemies = [];
-    this.kills = 0;
+  const FLASH_IMAGES = [
+    "images/flash1.png",
+    "images/flash2.png",
+    "images/flash3.png"
+  ];
 
-    this.computeLayout();
-    this.drawBoard();
+  const WORLD_W = GRID_W * TILE;
+  const WORLD_H = GRID_H * TILE;
 
-    this.player = this.add.rectangle(
-      this.playerX,
-      this.playerY,
-      this.tileSize * 0.8,
-      this.tileSize * 0.8,
-      0x00ff00
-    );
+  const inputState = { moveQueue: [], attackQueue: [] };
 
-    this.time.addEvent({
-      delay: 1200,
-      loop: true,
-      callback: this.spawnEnemyEdge,
-      callbackScope: this
-    });
+  document.addEventListener("touchmove", (e) => e.preventDefault(), { passive: false });
 
-    this.input.keyboard.on('keydown', e => this.handleKey(e));
-  }
+  document.querySelectorAll("[data-move]").forEach(btn => {
+    btn.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      const [dx, dy] = btn.dataset.move.split(",").map(Number);
+      inputState.moveQueue.push({ dx, dy });
+    }, { passive: false });
+  });
 
-  computeLayout() {
-    const w = this.scale.width;
-    const h = this.scale.height;
+  document.querySelectorAll("[data-atk]").forEach(btn => {
+    btn.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      const [dx, dy] = btn.dataset.atk.split(",").map(Number);
+      inputState.attackQueue.push({ dx, dy });
+    }, { passive: false });
+  });
 
-    this.tileSize = Math.min(
-      Math.floor(w / GRID_COLS),
-      Math.floor(h / GRID_ROWS)
-    );
+  document.getElementById("restart").addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    window.location.reload();
+  }, { passive: false });
 
-    this.boardWidth = this.tileSize * GRID_COLS;
-    this.boardHeight = this.tileSize * GRID_ROWS;
+  const statusEl = document.getElementById("status");
+  const setStatus = (t) => statusEl.textContent = t;
 
-    this.boardOffsetX = (w - this.boardWidth) / 2;
-    this.boardOffsetY = (h - this.boardHeight) / 2;
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const cellKey = (x, y) => `${x},${y}`;
+  const isAdjacent = (dx, dy) => (dx !== 0 || dy !== 0) && Math.abs(dx) <= 1 && Math.abs(dy) <= 1;
 
-    this.playerCol = Math.floor(GRID_COLS / 2);
-    this.playerRow = Math.floor(GRID_ROWS / 2);
+  const keyForImagePath = (path) => {
+    const base = path.split("/").pop().split(".")[0];
+    return `flash_${base}`;
+  };
 
-    const pos = this.gridToWorld(this.playerCol, this.playerRow);
-    this.playerX = pos.x;
-    this.playerY = pos.y;
-  }
+  class MainScene extends Phaser.Scene {
+    constructor() {
+      super("main");
+      this.player = null;
+      this.playerCell = { x: 0, y: 0 };
+      this.enemies = new Map();
+      this.kills = 0;
+      this.startTime = 0;
+      this.dead = false;
 
-  drawBoard() {
-    this.graphics = this.add.graphics();
-    this.graphics.fillStyle(0x222222);
+      this.attackFlash = null;
 
-    for (let r = 0; r < GRID_ROWS; r++) {
-      for (let c = 0; c < GRID_COLS; c++) {
-        const { x, y } = this.gridToWorld(c, r);
-        this.graphics.fillRect(
-          x - this.tileSize / 2,
-          y - this.tileSize / 2,
-          this.tileSize,
-          this.tileSize
+      this.killTimes = [];
+      this.centerFlash = null;
+      this.flashGrowTween = null;
+      this.flashKeys = []; // rebuilt from FLASH_IMAGES every load
+    }
+
+    preload() {
+      // Player sprite (must exist at images/flash2.png)
+      this.load.image("player", "images/flash2.png");
+
+
+      // Enemy sprite
+      this.load.image("fly", "images/fly.png");
+      // Surface asset load failures (common issue on GitHub Pages due to path/case)
+      this.load.on('loaderror', (file) => {
+        const el = document.getElementById('status');
+        if (el) el.textContent = `ASSET LOAD ERROR: ${file.key} (${file.src || file.url || ''})`;
+      });
+
+      this.flashKeys = []; // rebuilt from FLASH_IMAGES every load
+      for (const p of FLASH_IMAGES) {
+        const k = keyForImagePath(p);
+        this.flashKeys.push(k);
+        this.load.image(k, p);
+      }
+    }
+
+    create() {
+      this.cameras.main.setBackgroundColor("#0b0f14");
+
+      this.scale.resize(window.innerWidth, window.innerHeight);
+      this.scale.on("resize", (gameSize) => {
+        this.cameras.main.setViewport(0, 0, gameSize.width, gameSize.height);
+        this.fitWorldToScreen(gameSize.width, gameSize.height);
+      });
+
+      this.fitWorldToScreen(window.innerWidth, window.innerHeight);
+
+      this.gridGfx = this.add.graphics();
+      this.drawGrid();
+
+      this.playerCell = { x: Math.floor(GRID_W / 2), y: Math.floor(GRID_H / 2) };
+
+      // Player logical object (container) with a child sprite.
+      const px = this.cellToWorldX(this.playerCell.x);
+      const py = this.cellToWorldY(this.playerCell.y);
+
+      this.player = this.add.container(px, py);
+
+      // Player visual (image inside container)
+      this.playerSprite = this.add.image(0, 0, INITIAL_PLAYER_KEY);
+      this.player.add(this.playerSprite);
+
+      // Apply initial cover+crop
+      this.updatePlayerSpriteTexture(INITIAL_PLAYER_KEY);
+
+this.attackFlash = this.add.graphics();
+
+      // Center flash image (hidden)
+      const firstKey = this.flashKeys[0] || null;
+      this.centerFlash = this.add.image(this.player.x, this.player.y, firstKey);
+      this.centerFlash.setVisible(false);
+      this.centerFlash.setDepth(9999);
+
+      
+      // Ensure flash is WORLD-SPACE (moves with camera) and centered on its texture
+      this.centerFlash.setScrollFactor(1);
+      this.centerFlash.setOrigin(0.5, 0.5);
+this.kills = 0;
+      this.startTime = performance.now();
+      this.dead = false;
+      setStatus(this.statusLine());
+
+      this.time.addEvent({
+        delay: ENEMY_SPAWN_MS,
+        loop: true,
+        callback: () => { if (!this.dead) this.
+    fitCamera() {
+      const worldW = GRID_W * TILE;
+      const worldH = GRID_H * TILE;
+
+      const vw = this.scale.width;
+      const vh = this.scale.height;
+
+      const zoom = Math.min(vw / worldW, vh / worldH);
+
+      this.fitCamera();
+
+      // Re-fit on resize/rotation
+      this.scale.on('resize', () => this.fitCamera());}
+
+spawnEnemyEdge(); }
+      });
+
+      // Flash initial sprite to indicate starting character image
+      // initial flash disabled (function removed)
+
+    }
+
+    fitWorldToScreen(w, h) {
+      const s = Math.min(w / (GRID_W * TILE), h / (GRID_H * TILE));
+      const cam = this.cameras.main;
+      cam.setZoom(s);
+      cam.centerOn((GRID_W * TILE) / 2, (GRID_H * TILE) / 2);
+    }
+
+    drawGrid() {
+      const WW = GRID_W * TILE, HH = GRID_H * TILE;
+      this.gridGfx.clear();
+      this.gridGfx.lineStyle(1, 0x1f2a36, 1);
+      this.gridGfx.strokeRect(0, 0, WW, HH);
+      for (let x = 1; x < GRID_W; x++) this.gridGfx.lineBetween(x * TILE, 0, x * TILE, HH);
+      for (let y = 1; y < GRID_H; y++) this.gridGfx.lineBetween(0, y * TILE, WW, y * TILE);
+    }
+
+    cellToWorldX(cx) { return cx * TILE + TILE / 2; }
+    cellToWorldY(cy) { return cy * TILE + TILE / 2; }
+
+    statusLine(extra = "") {
+      const t = ((performance.now() - this.startTime) / 1000).toFixed(1);
+      const kps = (this.kills / Math.max(0.001, (performance.now() - this.startTime) / 1000)).toFixed(2);
+      return `Kills: ${this.kills} | Time: ${t}s | KPS: ${kps} | Enemies: ${this.enemies.size}${extra ? " | " + extra : ""}`;
+    }
+
+    spawnEnemyEdge() {
+      if (this.enemies.size >= MAX_ENEMIES) return;
+
+      for (let tries = 0; tries < 70; tries++) {
+        const side = Phaser.Math.Between(0, 3);
+        let x, y;
+        if (side === 0) { x = Phaser.Math.Between(0, GRID_W - 1); y = 0; }
+        else if (side === 1) { x = GRID_W - 1; y = Phaser.Math.Between(0, GRID_H - 1); }
+        else if (side === 2) { x = Phaser.Math.Between(0, GRID_W - 1); y = GRID_H - 1; }
+        else { x = 0; y = Phaser.Math.Between(0, GRID_H - 1); }
+
+        if (x === this.playerCell.x && y === this.playerCell.y) continue;
+        const k = cellKey(x, y);
+        if (this.enemies.has(k)) continue;
+
+        const enemy = this.add.image(
+          this.cellToWorldX(x),
+          this.cellToWorldY(y),
+          "fly"
         );
+        enemy.setDisplaySize(ENTITY_SIZE, ENTITY_SIZE);
+        this.enemies.set(k, enemy);
+        setStatus(this.statusLine());
+        return;
+      }
+    }
+
+    die(reason) {
+      this.dead = true;
+      setStatus(this.statusLine(`DEAD: ${reason}. Tap Restart.`));
+      if (this.playerSprite && this.playerSprite.setTint) { this.playerSprite.setTint(0x3b4b5c); }
+      if (this.playerSprite && this.playerSprite.setAlpha) { this.playerSprite.setAlpha(0.85); }
+    }
+
+    tryMove(dx, dy) {
+      if (this.dead) return;
+      if (!isAdjacent(dx, dy)) return;
+
+      const nx = clamp(this.playerCell.x + dx, 0, GRID_W - 1);
+      const ny = clamp(this.playerCell.y + dy, 0, GRID_H - 1);
+      if (nx === this.playerCell.x && ny === this.playerCell.y) return;
+
+      const k = cellKey(nx, ny);
+      if (this.enemies.has(k)) {
+        this.playerCell = { x: nx, y: ny };
+        this.player.setPosition(this.cellToWorldX(nx), this.cellToWorldY(ny));
+        this.die("stepped onto enemy");
+        return;
+      }
+
+      this.playerCell = { x: nx, y: ny };
+      this.player.setPosition(this.cellToWorldX(nx), this.cellToWorldY(ny));
+      setStatus(this.statusLine());
+    }
+
+    playAttackFlash(dx, dy) {
+      const x0 = this.cellToWorldX(this.playerCell.x);
+      const y0 = this.cellToWorldY(this.playerCell.y);
+      const x1 = x0 + dx * TILE * 0.95;
+      const y1 = y0 + dy * TILE * 0.95;
+
+      this.attackFlash.clear();
+      this.attackFlash.alpha = 1;
+      this.attackFlash.lineStyle(6, 0xf7f2a0, 1);
+      this.attackFlash.lineBetween(x0, y0, x1, y1);
+
+      this.tweens.add({
+        targets: this.attackFlash,
+        alpha: 0,
+        duration: 55,
+        onComplete: () => {
+          this.attackFlash.clear();
+          this.attackFlash.alpha = 1;
+        }
+      });
+    }
+
+    
+    updatePlayerSpriteTexture(key) {
+      // Swap the player sprite texture and re-apply cover scale + centered square crop.
+      if (!this.playerSprite || !key) return;
+      if (!this.textures.exists(key)) return;
+
+      // Clear any previous crop before reading source dimensions
+      if (this.playerSprite.setCrop) this.playerSprite.setCrop();
+
+      // Get source image size (more reliable than width/height after crops)
+      const tex = this.textures.get(key);
+      const src = (tex && tex.getSourceImage) ? tex.getSourceImage() : null;
+      const texW = (src && src.width) ? src.width : (this.playerSprite.width || 1);
+      const texH = (src && src.height) ? src.height : (this.playerSprite.height || 1);
+
+      this.playerSprite.setTexture(key);
+
+      const targetW = ENTITY_SIZE;
+      const targetH = ENTITY_SIZE;
+
+      const sCover = Math.max(targetW / texW, targetH / texH);
+      this.playerSprite.setScale(sCover);
+
+      // Crop a centered square region in texture space
+      const cropW = targetW / sCover;
+      const cropH = targetH / sCover;
+      const cropX = (texW - cropW) / 2;
+      const cropY = (texH - cropH) / 2;
+
+      if (this.playerSprite.setCrop) this.playerSprite.setCrop(cropX, cropY, cropW, cropH);
+    }
+
+flashRandomImage() {
+      if (!this.flashKeys.length || !this.centerFlash) return;
+
+      const key = Phaser.Utils.Array.GetRandom(this.flashKeys); // uniform random over all flash images
+
+      // Flash + adopt instantly
+      this.updatePlayerSpriteTexture(key);
+
+      const WW = GRID_W * TILE, HH = GRID_H * TILE;
+      const minDim = Math.min(WW, HH);
+      const target = minDim * FLASH_SCALE;
+
+      this.centerFlash.setTexture(key);
+
+      // Anchor flash at the player's rectangle center (keeps attention on the avatar)
+      this.centerFlash.setPosition(this.player.x, this.player.y);
+      this.centerFlash.setVisible(true);
+      this.centerFlash.setAlpha(0.98);
+
+      const w = this.centerFlash.width || 1;
+      const h = this.centerFlash.height || 1;
+      const s = target / Math.max(w, h);
+      this.centerFlash.setScale(s * 0.90);
+
+      // Pop animation (quick scale-in to full size)
+      this.tweens.add({
+        targets: this.centerFlash,
+        scale: s,
+        duration: 30,
+        ease: "Quad.out"
+      });
+
+      this.time.delayedCall(FLASH_DURATION_MS, () => {
+        if (this.centerFlash) this.centerFlash.setVisible(false);
+      });
+    }
+
+    recordKillAndMaybeFlash() {
+      const now = performance.now();
+      this.killTimes.push(now);
+
+      const cutoff = now - FLASH_WINDOW_MS;
+      while (this.killTimes.length && this.killTimes[0] < cutoff) this.killTimes.shift();
+
+      if (this.killTimes.length >= FLASH_KILLS_REQUIRED) {
+        this.killTimes = [];
+        this.flashRandomImage();
+      }
+    }
+
+    tryAttack(dx, dy) {
+      if (this.dead) return;
+      if (!isAdjacent(dx, dy)) return;
+
+      this.playAttackFlash(dx, dy);
+
+      const tx = this.playerCell.x + dx;
+      const ty = this.playerCell.y + dy;
+      if (tx < 0 || tx >= GRID_W || ty < 0 || ty >= GRID_H) {
+        setStatus(this.statusLine("edge"));
+        return;
+      }
+
+      const k = cellKey(tx, ty);
+      const enemy = this.enemies.get(k);
+      if (enemy) {
+        enemy.destroy();
+        this.enemies.delete(k);
+        this.kills += 1;
+        this.recordKillAndMaybeFlash();
+        setStatus(this.statusLine("HIT"));
+      } else {
+        setStatus(this.statusLine("miss"));
+      }
+    }
+
+    update() {
+      if (!this.dead && inputState.moveQueue.length) {
+        const { dx, dy } = inputState.moveQueue.shift();
+        this.tryMove(dx, dy);
+      }
+      if (!this.dead && inputState.attackQueue.length) {
+        const { dx, dy } = inputState.attackQueue.shift();
+        this.tryAttack(dx, dy);
       }
     }
   }
 
-  gridToWorld(col, row) {
-    return {
-      x: this.boardOffsetX + col * this.tileSize + this.tileSize / 2,
-      y: this.boardOffsetY + row * this.tileSize + this.tileSize / 2
-    };
-  }
+  const config = {
+    type: Phaser.AUTO,
+    parent: "game",
+    width: window.innerWidth,
+    height: window.innerHeight,
+    backgroundColor: "#0b0f14",
+    scene: [MainScene],
+    scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH }
+  };
 
-  spawnEnemyEdge() {
-    if (this.enemies.length >= MAX_ENEMIES) return;
+  window.addEventListener("resize", () => {
+    try {
+      const game = Phaser.GAMES[0];
+      if (game && game.scale) game.scale.resize(window.innerWidth, window.innerHeight);
+    } catch (_) {}
+  });
 
-    const side = Phaser.Math.Between(0, 3);
-    let col, row;
-
-    if (side === 0) { col = Phaser.Math.Between(0, GRID_COLS - 1); row = 0; }
-    if (side === 1) { col = Phaser.Math.Between(0, GRID_COLS - 1); row = GRID_ROWS - 1; }
-    if (side === 2) { col = 0; row = Phaser.Math.Between(0, GRID_ROWS - 1); }
-    if (side === 3) { col = GRID_COLS - 1; row = Phaser.Math.Between(0, GRID_ROWS - 1); }
-
-    if (col === this.playerCol && row === this.playerRow) return;
-
-    this.spawnEnemyAt(col, row);
-  }
-
-  spawnEnemyAt(col, row) {
-    const { x, y } = this.gridToWorld(col, row);
-    const enemy = this.add.image(x, y, 'enemy_fly');
-
-    const scale = Math.min(
-      this.tileSize / enemy.width,
-      this.tileSize / enemy.height
-    ) * 0.96;
-
-    enemy.setScale(scale);
-    enemy.gridX = col;
-    enemy.gridY = row;
-    enemy.setDepth(2);
-
-    this.enemies.push(enemy);
-  }
-
-  handleKey(e) {
-    const map = {
-      ArrowUp: [0, -1],
-      ArrowDown: [0, 1],
-      ArrowLeft: [-1, 0],
-      ArrowRight: [1, 0]
-    };
-
-    if (!map[e.key]) return;
-
-    const [dx, dy] = map[e.key];
-    const nc = this.playerCol + dx;
-    const nr = this.playerRow + dy;
-
-    if (nc < 0 || nr < 0 || nc >= GRID_COLS || nr >= GRID_ROWS) return;
-
-    const enemyIndex = this.enemies.findIndex(
-      e => e.gridX === nc && e.gridY === nr
-    );
-
-    if (enemyIndex !== -1) {
-      this.enemies[enemyIndex].destroy();
-      this.enemies.splice(enemyIndex, 1);
-      this.kills++;
-      return;
-    }
-
-    this.playerCol = nc;
-    this.playerRow = nr;
-    const pos = this.gridToWorld(nc, nr);
-    this.player.setPosition(pos.x, pos.y);
-  }
-}
-
-const config = {
-  type: Phaser.AUTO,
-  parent: 'game-container',
-  backgroundColor: '#000000',
-  scale: {
-    mode: Phaser.Scale.RESIZE,
-    autoCenter: Phaser.Scale.CENTER_BOTH
-  },
-  scene: GameScene
-};
-
-new Phaser.Game(config);
+  new Phaser.Game(config);
+})();
