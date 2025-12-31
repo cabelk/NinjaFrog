@@ -123,12 +123,21 @@ function bindSlidePad(padEl, queue) {
 
 
   document.addEventListener("touchmove", (e) => e.preventDefault(), { passive: false });
+  // Move pad: tap-only directional input (slide disabled for movement)
+  document.querySelectorAll("[data-move]").forEach(btn => {
+    btn.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      const [dx, dy] = btn.dataset.move.split(",").map(Number);
+      inputState.moveQueue.push({ dx, dy });
+    }, { passive: false });
+  });
+
 
 
 // Bind slide controls to pads (movement + attack)
 const movePad = document.getElementById("movePad");
 const attackPad = document.getElementById("attackPad");
-if (movePad) bindSlidePad(movePad, inputState.moveQueue);
+/* Move pad: TAP controls (no slide) */
 if (attackPad) bindSlidePad(attackPad, inputState.attackQueue);
 
 
