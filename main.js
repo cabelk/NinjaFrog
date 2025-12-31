@@ -181,21 +181,17 @@ if (attackPad) {
     }
 
     preload() {
-      
-      this.load.setPath("images");// Player sprite (must exist at images/flash2.png)
+      this.load.setPath("images");
+      // Player sprite (must exist at images/flash2.png)
       this.load.image("player", "flash2.png");
 
       // Enemy sprite
       this.load.image("enemy_fly", "fly.png");
-      // Lily pads
-      this.load.image("lily1", "lily1.png");
-      this.load.image("lily2", "lily2.png");
-      this.load.image("lily3", "lily3.png");
 
       // Surface asset load failures (common issue on GitHub Pages due to path/case)
-      this.load.on('loaderror', function (file) {
+      this.load.on('loaderror', (file) => {
         const el = document.getElementById('status');
-        if (el) { el.style.display = "block"; el.textContent = "ASSET LOAD ERROR: " + file.key + " (" + (file.src || file.url || "") + ")"; }
+        if (el) el.textContent = `ASSET LOAD ERROR: ${file.key} (${file.src || file.url || ''})`;
       });
 
       this.flashKeys = []; // rebuilt from FLASH_IMAGES every load
@@ -215,30 +211,22 @@ this.scale.resize(window.innerWidth, window.innerHeight);
 
       this.fitWorldToScreen(window.innerWidth, window.innerHeight);
       // Lily pads on non-border tiles
-      // Note: if an asset is missing (wrong filename/path), we skip placement to avoid Phaser's placeholder texture.
-      var lilyKeysAll = ["lily1", "lily2", "lily3"];
-      var lilyKeys = [];
-      for (var kk = 0; kk < lilyKeysAll.length; kk++) {
-        if (this.textures.exists(lilyKeysAll[kk])) lilyKeys.push(lilyKeysAll[kk]);
-      }
-      if (lilyKeys.length) {
-        var lilySize = this.cellSize * 0.90; // fill most of the cell
-        for (var yy = 1; yy < GRID_H - 1; yy++) {
-          for (var xx = 1; xx < GRID_W - 1; xx++) {
-            var key = lilyKeys[Math.floor(Math.random() * lilyKeys.length)];
-            var lx = this.cellToWorldX(xx);
-            var ly = this.cellToWorldY(yy);
-            var lily = this.add.image(lx, ly, key);
-            lily.setDisplaySize(lilySize, lilySize);
-            lily.setDepth(0);
-            lily.setAlpha(0.95);
-            // Small variation so the field doesn't look tiled
-            lily.setRotation((Math.random() - 0.5) * 0.15);
-            if (Math.random() < 0.25) lily.setFlipX(true);
-          }
+      var lilyKeys = ["lily1", "lily2", "lily3"];
+      var lilySize = this.cellSize * 0.95;
+      for (var yy = 1; yy < GRID_H - 1; yy++) {
+        for (var xx = 1; xx < GRID_W - 1; xx++) {
+          var key = lilyKeys[Math.floor(Math.random() * lilyKeys.length)];
+          var lx = this.cellToWorldX(xx);
+          var ly = this.cellToWorldY(yy);
+          var lily = this.add.image(lx, ly, key);
+          lily.setOrigin(0.5, 0.5);
+          lily.setDisplaySize(lilySize, lilySize);
+          lily.setDepth(0);
+          lily.setAlpha(0.95);
+          lily.setRotation((Math.random() - 0.5) * 0.12);
+          if (Math.random() < 0.25) lily.setFlipX(true);
         }
-      }
-      // Grid disabled
+      }// Grid disabled
       this.playerCell = { x: Math.floor(GRID_W / 2), y: Math.floor(GRID_H / 2) };
 
       // Player logical object (container) with a child sprite.
