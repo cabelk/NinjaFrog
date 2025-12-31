@@ -200,7 +200,19 @@ html, body {
 }
 
 
-/* Placeholder background (no image dependency) */
+/* --- Pond water background (requires /images/water.png) --- */
 #app {
-  background-color: #061a2a; /* deep pond blue */
+  background-image: url("images/water.png");
+  background-repeat: repeat;
+  background-size: 512px 512px;
+  background-position: 0 0;
+  animation: waterPan 18s linear infinite;
 }
+
+@keyframes waterPan {
+  0%   { background-position: 0px 0px; }
+  100% { background-position: 260px 180px; }
+}
+
+/* Ensure Phaser canvas is transparent so the water shows through */
+#game canvas { background: transparent !important; }
