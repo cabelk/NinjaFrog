@@ -210,18 +210,11 @@ if (attackPad) {
       // Clear prior decor (if any)
       if (this.decorLayer) this.decorLayer.removeAll(true);
 
-      // Debug overlay so we can confirm texture existence and pad count in prod
-      var status = document.getElementById("status");
-      var have1 = this.textures.exists("lily1");
-      var have2 = this.textures.exists("lily2");
-      var have3 = this.textures.exists("lily3");
-      if (status) {
-        status.style.display = "block";
-        status.textContent = "LILIES loaded? lily1=" + have1 + " lily2=" + have2 + " lily3=" + have3;
-      }
-
       var lilyKeys = ["lily1", "lily2", "lily3"];
       var count = 0;
+
+      // Use TILE as the authoritative tile size; the camera zoom handles viewport fitting.
+      var target = TILE * 0.95;
 
       for (var yy = 1; yy < GRID_H - 1; yy++) {
         for (var xx = 1; xx < GRID_W - 1; xx++) {
@@ -229,12 +222,12 @@ if (attackPad) {
           var lx = this.cellToWorldX(xx);
           var ly = this.cellToWorldY(yy);
 
-          // Same parent/child pattern as enemies: container at cell center + child sprite at (0,0)
+          // Parent/child pattern: container at cell center + child sprite at (0,0)
           var pad = this.add.container(lx, ly);
           var sprite = this.add.image(0, 0, key);
           pad.add(sprite);
 
-          // Cover+crop to fill the cell square (mirrors enemy logic)
+          // Cover+crop to fill a square tile (same approach as enemy sprite sizing)
           if (this.textures.exists(key)) {
             if (sprite.setCrop) sprite.setCrop();
 
@@ -243,19 +236,17 @@ if (attackPad) {
             var texW = (srcImg && srcImg.width) ? srcImg.width : (sprite.width || 1);
             var texH = (srcImg && srcImg.height) ? srcImg.height : (sprite.height || 1);
 
-            var target = this.cellSize * 0.95;
-            var scale = Math.max(target / texW, target / texH);
-            sprite.setScale(scale);
+            var sCover = Math.max(target / texW, target / texH);
+            sprite.setScale(sCover);
 
-            var cropW = target / scale;
-            var cropH = target / scale;
+            var cropW = target / sCover;
+            var cropH = target / sCover;
             var cx = (texW - cropW) / 2;
             var cy = (texH - cropH) / 2;
             if (sprite.setCrop) sprite.setCrop(cx, cy, cropW, cropH);
-          } else {
-            sprite.setDisplaySize(this.cellSize * 0.5, this.cellSize * 0.5);
           }
 
+          sprite.setAlpha(0.95);
           pad.setRotation((Math.random() - 0.5) * 0.12);
           if (Math.random() < 0.25) sprite.setFlipX(true);
 
@@ -263,8 +254,6 @@ if (attackPad) {
           count++;
         }
       }
-
-      if (status) status.textContent = status.textContent + " | pads=" + count;
     }
 
 
