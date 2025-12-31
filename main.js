@@ -84,9 +84,6 @@
       // Player sprite (must exist at images/flash2.png)
       this.load.image("player", "images/flash2.png");
 
-
-      // Enemy sprite
-      this.load.image("fly", "images/fly.png");
       // Surface asset load failures (common issue on GitHub Pages due to path/case)
       this.load.on('loaderror', (file) => {
         const el = document.getElementById('status');
@@ -213,12 +210,13 @@ spawnEnemyEdge(); }
         const k = cellKey(x, y);
         if (this.enemies.has(k)) continue;
 
-        const enemy = this.add.image(
+        const enemy = this.add.rectangle(
           this.cellToWorldX(x),
           this.cellToWorldY(y),
-          "fly"
+          ENTITY_SIZE,
+          ENTITY_SIZE,
+          0xff5d6c
         );
-        enemy.setDisplaySize(ENTITY_SIZE, ENTITY_SIZE);
         this.enemies.set(k, enemy);
         setStatus(this.statusLine());
         return;
