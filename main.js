@@ -224,6 +224,7 @@ if (attackPad) {
 
           // Parent/child pattern: container at cell center + child sprite at (0,0)
           var pad = this.add.container(lx, ly);
+          pad.setDepth(-10);
           var sprite = this.add.image(0, 0, key);
           pad.add(sprite);
 
@@ -271,6 +272,11 @@ if (attackPad) {
       this.fxLayer = this.add.layer();
       this.fxLayer.setDepth(30);
 
+
+      // Ensure depth ordering is applied consistently across mobile browsers
+      this.children.sort("depth");
+      this.children.bringToTop(this.entityLayer);
+      this.children.bringToTop(this.fxLayer);
 this.scale.resize(window.innerWidth, window.innerHeight);
       this.scale.on("resize", (gameSize) => {
         this.cameras.main.setViewport(0, 0, gameSize.width, gameSize.height);
