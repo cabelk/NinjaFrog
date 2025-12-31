@@ -1,9 +1,9 @@
 (() => {
-  const TILE = 36;
-  const GRID_W = 13;
-  const GRID_H = 13;
+  const TILE = 72; // doubled tile size (larger squares)
+  const GRID_W = 6; // half columns (was 13)
+  const GRID_H = 5; // removed 2 rows then halved (13->11->5)
   const ENEMY_SPAWN_MS = 550;
-  const MAX_ENEMIES = 22;
+  const MAX_ENEMIES = 10;
 
   // Reward flash settings
   const FLASH_KILLS_REQUIRED = 5;
@@ -12,6 +12,8 @@
   const FLASH_SCALE = 0.55;
 
   // Put your images in /images and list them here.
+  const INITIAL_PLAYER_KEY = "flash_flash2"; // starting character image
+
   const FLASH_IMAGES = [
     "images/flash1.png",
     "images/flash2.png",
@@ -72,13 +74,11 @@
 
       this.killTimes = [];
       this.centerFlash = null;
+      this.flashGrowTween = null;
       this.flashKeys = [];
     }
 
     preload() {
-      // Player sprite (must exist at images/flash2.png)
-      this.load.image("player", "images/flash2.png");
-
       // Surface asset load failures (common issue on GitHub Pages due to path/case)
       this.load.on('loaderror', (file) => {
         const el = document.getElementById('status');
@@ -116,8 +116,8 @@
       this.player = this.add.container(px, py);
 
       // Player visual (image inside container)
-      if (this.textures.exists('player')) {
-        this.playerSprite = this.add.image(0, 0, "player");
+      if (this.textures.exists(INITIAL_PLAYER_KEY)) {
+        this.playerSprite = this.add.image(0, 0, INITIAL_PLAYER_KEY);
         this.player.add(this.playerSprite);
 
         // Target render size within tile (matches prior rectangle sizing)
@@ -138,6 +138,9 @@
         const cropX = (texW - cropW) / 2;
         const cropY = (texH - cropH) / 2;
         this.playerSprite.setCrop(cropX, cropY, cropW, cropH);
+
+        // Ensure initial crop/scale is correct
+        this.updatePlayerSpriteTexture(INITIAL_PLAYER_KEY);
       } else {
         // Fallback (should be rare if images/flash2.png is present)
         const targetW = TILE * 0.70;
@@ -145,7 +148,7 @@
         this.playerSprite = this.add.rectangle(0, 0, targetW, targetH, 0xff00ff);
         this.player.add(this.playerSprite);
         const el = document.getElementById('status');
-        if (el) el.textContent = 'PLAYER TEXTURE MISSING: ensure images/flash2.png exists (case-sensitive)';
+        if (el) el.textContent = 'PLAYER TEXTURE MISSING: ensure images/flash2.png exists (case-sensitive) and FLASH_IMAGES includes it';
       }
 
 this.attackFlash = this.add.graphics();
@@ -170,6 +173,10 @@ this.kills = 0;
         loop: true,
         callback: () => { if (!this.dead) this.spawnEnemyEdge(); }
       });
+
+      // Flash the initial character image (Flash2) at game start
+      this.flashSpecificImage(INITIAL_PLAYER_KEY);
+
     }
 
     fitWorldToScreen(w, h) {
@@ -275,10 +282,74 @@ this.kills = 0;
       });
     }
 
-    flashRandomImage() {
+    
+    updatePlayerSpriteTexture(key) {
+      // Swap the player sprite texture and re-apply cover scale + centered square crop.
+      if (!this.playerSprite || !this.textures.exists(key)) return;
+
+      this.playerSprite.setTexture(key);
+
+      const targetW = TILE * 0.70;
+      const targetH = TILE * 0.70;
+
+      // In Phaser, width/height reflect the source frame size before scaling.
+      const texW = this.playerSprite.width || 1;
+      const texH = this.playerSprite.height || 1;
+
+      const sCover = Math.max(targetW / texW, targetH / texH);
+      this.playerSprite.setScale(sCover);
+
+      const cropW = targetW / sCover;
+      const cropH = targetH / sCover;
+      const cropX = (texW - cropW) / 2;
+      const cropY = (texH - cropH) / 2;
+      this.playerSprite.setCrop(cropX, cropY, cropW, cropH);
+
+        // Ensure initial crop/scale is correct
+        this.updatePlayerSpriteTexture(INITIAL_PLAYER_KEY);
+    }
+
+
+    flashSpecificImage(key) {
+      if (!key || !this.textures.exists(key) || !this.centerFlash) return;
+
+      // Anchor flash at the player's current position (container center)
+      this.centerFlash.setTexture(key);
+      this.centerFlash.setPosition(this.player.x, this.player.y);
+      this.centerFlash.setVisible(true);
+      this.centerFlash.setAlpha(0.98);
+
+      // Size relative to world so it looks consistent across zoom
+      const WW = GRID_W * TILE, HH = GRID_H * TILE;
+      const minDim = Math.min(WW, HH);
+      const target = minDim * FLASH_SCALE;
+
+      const w = this.centerFlash.width || 1;
+      const h = this.centerFlash.height || 1;
+      const s = target / Math.max(w, h);
+      this.centerFlash.setScale(s * 0.05);
+
+      if (this.flashGrowTween) { this.flashGrowTween.stop(); this.flashGrowTween = null; }
+      this.flashGrowTween = this.tweens.add({
+        targets: this.centerFlash,
+        scale: s,
+        duration: FLASH_DURATION_MS,
+        ease: "Quad.out"
+      });
+
+      this.time.delayedCall(FLASH_DURATION_MS, () => {
+        if (!this.centerFlash) return;
+        this.centerFlash.setVisible(false);
+      });
+    }
+
+flashRandomImage() {
       if (!this.flashKeys.length || !this.centerFlash) return;
 
       const key = Phaser.Utils.Array.GetRandom(this.flashKeys);
+
+      // After flashing, permanently adopt this image as the player sprite
+      this.updatePlayerSpriteTexture(key);
 
       const WW = GRID_W * TILE, HH = GRID_H * TILE;
       const minDim = Math.min(WW, HH);
