@@ -1,5 +1,8 @@
 (() => {
   const TILE = 72; // doubled tile size (larger squares)
+  const TILE_INSET = 0.05; // 5% padding per side inside each tile (tighter board)
+  const ENTITY_SIZE = TILE * (1 - TILE_INSET * 2); // size of sprites/enemies inside a tile
+  res)
   const GRID_W = 6; // 13 -> remove 2 rows (13x11) then halve columns -> 6
   const GRID_H = 5; // 13 -> 11 -> halve rows -> 5
   const ENEMY_SPAWN_MS = 550;
@@ -196,8 +199,8 @@ this.kills = 0;
         const enemy = this.add.rectangle(
           this.cellToWorldX(x),
           this.cellToWorldY(y),
-          TILE * 0.68,
-          TILE * 0.68,
+          ENTITY_SIZE,
+          ENTITY_SIZE,
           0xff5d6c
         );
         this.enemies.set(k, enemy);
@@ -273,8 +276,8 @@ this.kills = 0;
 
       this.playerSprite.setTexture(key);
 
-      const targetW = TILE * 0.70;
-      const targetH = TILE * 0.70;
+      const targetW = ENTITY_SIZE;
+      const targetH = ENTITY_SIZE;
 
       const sCover = Math.max(targetW / texW, targetH / texH);
       this.playerSprite.setScale(sCover);
