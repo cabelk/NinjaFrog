@@ -20,9 +20,9 @@
   const INITIAL_PLAYER_KEY = "flash_flash2";
 
   const FLASH_IMAGES = [
-    "images/flash1.png",
-    "images/flash2.png",
-    "images/flash3.png"
+    "flash1.png",
+    "flash2.png",
+    "flash3.png"
   ];
 
   const WORLD_W = GRID_W * TILE;
@@ -181,20 +181,21 @@ if (attackPad) {
     }
 
     preload() {
-      // Player sprite (must exist at images/flash2.png)
-      this.load.image("player", "images/flash2.png");
+      
+      this.load.setPath("images");// Player sprite (must exist at images/flash2.png)
+      this.load.image("player", "flash2.png");
 
       // Enemy sprite
-      this.load.image("enemy_fly", "images/fly.png");
+      this.load.image("enemy_fly", "fly.png");
       // Lily pads
-      this.load.image("lily1", "images/lily1.png");
-      this.load.image("lily2", "images/lily2.png");
-      this.load.image("lily3", "images/lily3.png");
+      this.load.image("lily1", "lily1.png");
+      this.load.image("lily2", "lily2.png");
+      this.load.image("lily3", "lily3.png");
 
       // Surface asset load failures (common issue on GitHub Pages due to path/case)
-      this.load.on('loaderror', (file) => {
+      this.load.on('loaderror', function (file) {
         const el = document.getElementById('status');
-        if (el) el.textContent = `ASSET LOAD ERROR: ${file.key} (${file.src || file.url || ''})`;
+        if (el) { el.style.display = "block"; el.textContent = "ASSET LOAD ERROR: " + file.key + " (" + (file.src || file.url || "") + ")"; }
       });
 
       this.flashKeys = []; // rebuilt from FLASH_IMAGES every load
