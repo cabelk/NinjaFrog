@@ -16,13 +16,14 @@ html, body {
   color: var(--text);
   font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   overscroll-behavior: none;
-  touch-action: none;
 }
+
+/* Let the HUD handle pointer events; the canvas should not eat taps meant for the UI */
+#game canvas { pointer-events: none; }
 
 #app { position: relative; height: 100vh; width: 100vw; overflow: hidden; }
 #game { position:absolute; inset:0; }
-
-#hud { position: absolute; inset: 0; pointer-events: auto; }
+#hud  { position: absolute; inset: 0; pointer-events: auto; }
 
 #topBar {
   position: absolute;
@@ -33,7 +34,6 @@ html, body {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  pointer-events: auto;
 }
 
 #status {
@@ -62,7 +62,7 @@ html, body {
   padding: 0;
   user-select: none;
   -webkit-user-select: none;
-  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .btn:active { background: var(--btnBgDown); }
@@ -80,7 +80,6 @@ html, body {
   grid-template-columns: repeat(3, var(--btnSize));
   grid-template-rows: repeat(3, var(--btnSize));
   gap: var(--gap);
-  pointer-events: auto;
 }
 
 #movePad { left: 14px; }
@@ -111,7 +110,3 @@ html, body {
 @media (max-width: 380px){
   :root{ --btnSize: 46px; --gap: 7px; }
 }
-
-
-/* Ensure on-screen controls receive taps; canvas should not intercept pointer events */
-#game canvas { pointer-events: none; }
