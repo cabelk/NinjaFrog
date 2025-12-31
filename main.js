@@ -209,7 +209,7 @@ this.scale.resize(window.innerWidth, window.innerHeight);
       });
 
       this.fitWorldToScreen(window.innerWidth, window.innerHeight);
-      // Lily pads on non-border tiles (ES5-safe)
+      // Lily pads on non-border tiles
       var lilyKeys = ["lily1", "lily2", "lily3"];
       for (var yy = 1; yy < GRID_H - 1; yy++) {
         for (var xx = 1; xx < GRID_W - 1; xx++) {
@@ -221,9 +221,8 @@ this.scale.resize(window.innerWidth, window.innerHeight);
           lily.setDepth(0);
         }
       }
-
-      // Grid disabled (water background)
-this.playerCell = { x: Math.floor(GRID_W / 2), y: Math.floor(GRID_H / 2) };
+      // Grid disabled
+      this.playerCell = { x: Math.floor(GRID_W / 2), y: Math.floor(GRID_H / 2) };
 
       // Player logical object (container) with a child sprite.
       const px = this.cellToWorldX(this.playerCell.x);
@@ -274,7 +273,6 @@ this.kills = 0;
     }
 
     drawGrid() { /* disabled */ }
-
 
     cellToWorldX(cx) { return cx * TILE + TILE / 2; }
     cellToWorldY(cy) { return cy * TILE + TILE / 2; }
@@ -365,24 +363,25 @@ this.kills = 0;
       this.player.setPosition(this.cellToWorldX(nx), this.cellToWorldY(ny));
       setStatus(this.statusLine());
     }
+
+    
+    
     triggerInhale() {
       if (!this.player) return;
 
-      // Dedicated inhale state so we never interfere with movement/other tweens.
       if (!this._inhaleState) this._inhaleState = { s: 1 };
 
-      // Stop/cleanup any prior inhale tween only (do NOT kill all tweens on player).
+      // Stop any prior inhale tween only
       if (this._inhaleTween) {
         try { this._inhaleTween.stop(); } catch (_) {}
         try { this._inhaleTween.remove(); } catch (_) {}
         this._inhaleTween = null;
       }
 
-      // Authoritative baseline
       this._inhaleState.s = 1;
       this.player.setScale(1);
 
-      // Run inhale as a proxy tween; apply scale in onUpdate.
+      var scene = this;
       this._inhaleTween = this.tweens.add({
         targets: this._inhaleState,
         s: 1.12,
@@ -390,24 +389,18 @@ this.kills = 0;
         ease: "Quad.out",
         yoyo: true,
         hold: 10,
-        onUpdate: () => {
-          if (this.player) this.player.setScale(this._inhaleState.s);
+        onUpdate: function () {
+          if (scene.player) scene.player.setScale(scene._inhaleState.s);
         },
-        onComplete: () => {
-          this._inhaleState.s = 1;
-          if (this.player) this.player.setScale(1);
-          this._inhaleTween = null;
+        onComplete: function () {
+          scene._inhaleState.s = 1;
+          if (scene.player) scene.player.setScale(1);
+          scene._inhaleTween = null;
         }
       });
     }
 
-      });
-    }
-
-
-
-    
-    animateEnemyDeath(enemy) {
+animateEnemyDeath(enemy) {
       if (!enemy || !enemy.scene) return;
       if (enemy._dying) return;
       enemy._dying = true;
@@ -436,15 +429,9 @@ this.kills = 0;
           });
         }
       });
-      this.triggerInhale();
-});
-        }
 
-        // Restart from the beginning every time we absorb an enemy
-        this._inhaleTween.restart();
-      }
+      scene.triggerInhale();
     }
-
 
 playAttackFlash(dx, dy) {
       const x0 = this.cellToWorldX(this.playerCell.x);
@@ -594,7 +581,7 @@ flashRandomImage() {
     transparent: true,
     width: window.innerWidth,
     height: window.innerHeight,
-    scene: [MainScene],
+scene: [MainScene],
     scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH }
   };
 
