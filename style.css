@@ -19,20 +19,10 @@ html, body {
   touch-action: none;
 }
 
-#app {
-  position: relative;
-  height: 100vh;
-  width: 100vw;
-  overflow: hidden;
-}
-
+#app { position: relative; height: 100vh; width: 100vw; overflow: hidden; }
 #game { position:absolute; inset:0; }
 
-#hud {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
+#hud { position: absolute; inset: 0; pointer-events: none; }
 
 #topBar {
   position: absolute;
@@ -76,15 +66,8 @@ html, body {
 }
 
 .btn:active { background: var(--btnBgDown); }
+.btn.small { height: 40px; padding: 0 14px; font-size: 14px; border-radius: 12px; }
 
-.btn.small {
-  height: 40px;
-  padding: 0 14px;
-  font-size: 14px;
-  border-radius: 12px;
-}
-
-/* 3x3 Pads (intuitive directional layout) */
 .pad3{
   position: absolute;
   bottom: 14px;
@@ -103,11 +86,7 @@ html, body {
 #movePad { left: 14px; }
 #attackPad { right: 14px; }
 
-.padbtn{
-  width: var(--btnSize);
-  height: var(--btnSize);
-  border-radius: 18px;
-}
+.padbtn{ width: var(--btnSize); height: var(--btnSize); border-radius: 18px; }
 
 .pad-center{
   border-radius: 18px;
@@ -124,19 +103,11 @@ html, body {
   opacity: 0.75;
 }
 
-/* Landscape: slightly smaller pads so battlefield has more room */
 @media (orientation: landscape){
-  :root{
-    --btnSize: 52px;
-    --gap: 8px;
-  }
+  :root{ --btnSize: 52px; --gap: 8px; }
   #status{ max-width: 58vw; }
 }
 
-/* Small phones */
 @media (max-width: 380px){
-  :root{
-    --btnSize: 46px;
-    --gap: 7px;
-  }
+  :root{ --btnSize: 46px; --gap: 7px; }
 }

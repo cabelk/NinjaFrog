@@ -11,14 +11,12 @@
   <div id="app">
     <div id="game"></div>
 
-    <!-- HUD overlay -->
     <div id="hud">
       <div id="topBar">
         <div id="status">Loading…</div>
         <button id="restart" class="btn small">Restart</button>
       </div>
 
-      <!-- Bottom-left: movement pad (3x3 with empty center) -->
       <div id="movePad" class="pad3">
         <button class="btn padbtn" data-move="-1,-1" aria-label="move nw">↖</button>
         <button class="btn padbtn" data-move="0,-1"  aria-label="move n">↑</button>
@@ -33,7 +31,6 @@
         <button class="btn padbtn" data-move="1,1"   aria-label="move se">↘</button>
       </div>
 
-      <!-- Bottom-right: attack pad (3x3 with empty center) -->
       <div id="attackPad" class="pad3">
         <button class="btn padbtn atk" data-atk="-1,-1" aria-label="attack nw">↖</button>
         <button class="btn padbtn atk" data-atk="0,-1"  aria-label="attack n">↑</button>

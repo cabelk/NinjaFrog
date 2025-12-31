@@ -1,22 +1,30 @@
 (() => {
-  // --- Tunables ---
   const TILE = 36;
   const GRID_W = 13;
   const GRID_H = 13;
   const ENEMY_SPAWN_MS = 550;
   const MAX_ENEMIES = 22;
 
+  // Reward flash settings
+  const FLASH_KILLS_REQUIRED = 5;
+  const FLASH_WINDOW_MS = 2000;
+  const FLASH_DURATION_MS = 85;   // a couple frames-ish
+  const FLASH_SCALE = 0.55;
+
+  // Put your images in /images and list them here.
+  const FLASH_IMAGES = [
+    "images/flash1.png",
+    "images/flash2.png",
+    "images/flash3.png",
+  ];
+
   const WORLD_W = GRID_W * TILE;
   const WORLD_H = GRID_H * TILE;
 
-  const inputState = {
-    moveQueue: [],
-    attackQueue: [],
-  };
+  const inputState = { moveQueue: [], attackQueue: [] };
 
   document.addEventListener("touchmove", (e) => e.preventDefault(), { passive: false });
 
-  // Move buttons: one step per tap
   document.querySelectorAll("[data-move]").forEach(btn => {
     btn.addEventListener("pointerdown", (e) => {
       e.preventDefault();
@@ -25,7 +33,6 @@
     }, { passive: false });
   });
 
-  // Attack buttons: 8 directions, fire per tap
   document.querySelectorAll("[data-atk]").forEach(btn => {
     btn.addEventListener("pointerdown", (e) => {
       e.preventDefault();
@@ -40,13 +47,16 @@
   }, { passive: false });
 
   const statusEl = document.getElementById("status");
-  function setStatus(text) { statusEl.textContent = text; }
+  const setStatus = (t) => statusEl.textContent = t;
 
-  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
-  function cellKey(x, y) { return `${x},${y}`; }
-  function isAdjacent(dx, dy) {
-    return (dx !== 0 || dy !== 0) && Math.abs(dx) <= 1 && Math.abs(dy) <= 1;
-  }
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const cellKey = (x, y) => `${x},${y}`;
+  const isAdjacent = (dx, dy) => (dx !== 0 || dy !== 0) && Math.abs(dx) <= 1 && Math.abs(dy) <= 1;
+
+  const keyForImagePath = (path) => {
+    const base = path.split("/").pop().split(".")[0];
+    return `flash_${base}`;
+  };
 
   class MainScene extends Phaser.Scene {
     constructor() {
@@ -57,13 +67,26 @@
       this.kills = 0;
       this.startTime = 0;
       this.dead = false;
+
       this.attackFlash = null;
+
+      this.killTimes = [];
+      this.centerFlash = null;
+      this.flashKeys = [];
+    }
+
+    preload() {
+      this.flashKeys = [];
+      for (const p of FLASH_IMAGES) {
+        const k = keyForImagePath(p);
+        this.flashKeys.push(k);
+        this.load.image(k, p);
+      }
     }
 
     create() {
       this.cameras.main.setBackgroundColor("#0b0f14");
 
-      // Responsive canvas size
       this.scale.resize(window.innerWidth, window.innerHeight);
       this.scale.on("resize", (gameSize) => {
         this.cameras.main.setViewport(0, 0, gameSize.width, gameSize.height);
@@ -72,11 +95,9 @@
 
       this.fitWorldToScreen(window.innerWidth, window.innerHeight);
 
-      // Grid
       this.gridGfx = this.add.graphics();
       this.drawGrid();
 
-      // Player in center
       this.playerCell = { x: Math.floor(GRID_W / 2), y: Math.floor(GRID_H / 2) };
       this.player = this.add.rectangle(
         this.cellToWorldX(this.playerCell.x),
@@ -88,6 +109,12 @@
 
       this.attackFlash = this.add.graphics();
 
+      // Center flash image (hidden)
+      const firstKey = this.flashKeys[0] || null;
+      this.centerFlash = this.add.image(WORLD_W / 2, WORLD_H / 2, firstKey);
+      this.centerFlash.setVisible(false);
+      this.centerFlash.setDepth(9999);
+
       this.kills = 0;
       this.startTime = performance.now();
       this.dead = false;
@@ -96,25 +123,24 @@
       this.time.addEvent({
         delay: ENEMY_SPAWN_MS,
         loop: true,
-        callback: () => {
-          if (!this.dead) this.spawnEnemyEdge();
-        }
+        callback: () => { if (!this.dead) this.spawnEnemyEdge(); }
       });
     }
 
     fitWorldToScreen(w, h) {
-      const s = Math.min(w / WORLD_W, h / WORLD_H);
+      const s = Math.min(w / (GRID_W * TILE), h / (GRID_H * TILE));
       const cam = this.cameras.main;
       cam.setZoom(s);
-      cam.centerOn(WORLD_W / 2, WORLD_H / 2);
+      cam.centerOn((GRID_W * TILE) / 2, (GRID_H * TILE) / 2);
     }
 
     drawGrid() {
+      const WW = GRID_W * TILE, HH = GRID_H * TILE;
       this.gridGfx.clear();
       this.gridGfx.lineStyle(1, 0x1f2a36, 1);
-      this.gridGfx.strokeRect(0, 0, WORLD_W, WORLD_H);
-      for (let x = 1; x < GRID_W; x++) this.gridGfx.lineBetween(x * TILE, 0, x * TILE, WORLD_H);
-      for (let y = 1; y < GRID_H; y++) this.gridGfx.lineBetween(0, y * TILE, WORLD_W, y * TILE);
+      this.gridGfx.strokeRect(0, 0, WW, HH);
+      for (let x = 1; x < GRID_W; x++) this.gridGfx.lineBetween(x * TILE, 0, x * TILE, HH);
+      for (let y = 1; y < GRID_H; y++) this.gridGfx.lineBetween(0, y * TILE, WW, y * TILE);
     }
 
     cellToWorldX(cx) { return cx * TILE + TILE / 2; }
@@ -203,6 +229,43 @@
       });
     }
 
+    flashRandomImage() {
+      if (!this.flashKeys.length || !this.centerFlash) return;
+
+      const key = Phaser.Utils.Array.GetRandom(this.flashKeys);
+
+      const WW = GRID_W * TILE, HH = GRID_H * TILE;
+      const minDim = Math.min(WW, HH);
+      const target = minDim * FLASH_SCALE;
+
+      this.centerFlash.setTexture(key);
+      this.centerFlash.setPosition(WW / 2, HH / 2);
+      this.centerFlash.setVisible(true);
+      this.centerFlash.setAlpha(0.98);
+
+      const w = this.centerFlash.width || 1;
+      const h = this.centerFlash.height || 1;
+      const s = target / Math.max(w, h);
+      this.centerFlash.setScale(s);
+
+      this.time.delayedCall(FLASH_DURATION_MS, () => {
+        if (this.centerFlash) this.centerFlash.setVisible(false);
+      });
+    }
+
+    recordKillAndMaybeFlash() {
+      const now = performance.now();
+      this.killTimes.push(now);
+
+      const cutoff = now - FLASH_WINDOW_MS;
+      while (this.killTimes.length && this.killTimes[0] < cutoff) this.killTimes.shift();
+
+      if (this.killTimes.length >= FLASH_KILLS_REQUIRED) {
+        this.killTimes = [];
+        this.flashRandomImage();
+      }
+    }
+
     tryAttack(dx, dy) {
       if (this.dead) return;
       if (!isAdjacent(dx, dy)) return;
@@ -222,6 +285,7 @@
         enemy.destroy();
         this.enemies.delete(k);
         this.kills += 1;
+        this.recordKillAndMaybeFlash();
         setStatus(this.statusLine("HIT"));
       } else {
         setStatus(this.statusLine("miss"));
@@ -233,7 +297,6 @@
         const { dx, dy } = inputState.moveQueue.shift();
         this.tryMove(dx, dy);
       }
-
       if (!this.dead && inputState.attackQueue.length) {
         const { dx, dy } = inputState.attackQueue.shift();
         this.tryAttack(dx, dy);
@@ -248,10 +311,7 @@
     height: window.innerHeight,
     backgroundColor: "#0b0f14",
     scene: [MainScene],
-    scale: {
-      mode: Phaser.Scale.RESIZE,
-      autoCenter: Phaser.Scale.CENTER_BOTH,
-    }
+    scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH }
   };
 
   window.addEventListener("resize", () => {
