@@ -147,7 +147,22 @@ this.kills = 0;
       this.time.addEvent({
         delay: ENEMY_SPAWN_MS,
         loop: true,
-        callback: () => { if (!this.dead) this.spawnEnemyEdge(); }
+        callback: () => { if (!this.dead) this.
+    fitCamera() {
+      const worldW = GRID_W * TILE;
+      const worldH = GRID_H * TILE;
+
+      const vw = this.scale.width;
+      const vh = this.scale.height;
+
+      const zoom = Math.min(vw / worldW, vh / worldH);
+
+      this.fitCamera();
+
+      // Re-fit on resize/rotation
+      this.scale.on('resize', () => this.fitCamera());}
+
+spawnEnemyEdge(); }
       });
 
       // Flash initial sprite to indicate starting character image
@@ -397,20 +412,3 @@ flashRandomImage() {
 
   new Phaser.Game(config);
 })();
-    fitCamera() {
-      const worldW = GRID_W * TILE;
-      const worldH = GRID_H * TILE;
-
-      // Available viewport (canvas) size
-      const vw = this.scale.width;
-      const vh = this.scale.height;
-
-      // Fit world into viewport (no cropping)
-      const zoom = Math.min(vw / worldW, vh / worldH);
-
-      this.cameras.main.setBounds(0, 0, worldW, worldH);
-      this.cameras.main.setZoom(zoom);
-      this.cameras.main.centerOn(worldW / 2, worldH / 2);
-    }
-
-
