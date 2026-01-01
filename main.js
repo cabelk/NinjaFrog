@@ -182,7 +182,12 @@ const statusEl = document.getElementById("status");
       this.dead = false;
 
       
-      this.hideGameOverOverlay();
+      
+
+      // Movement tween state (prevents stacked inputs mid-hop)
+      this.moving = false;
+      this._moveTween = null;
+this.hideGameOverOverlay();
 this.attackFlash = null;
 
       this.killTimes = [];
@@ -541,30 +546,27 @@ this.dead = false;
       if (this.playerSprite && this.playerSprite.setAlpha) { this.playerSprite.setAlpha(0.85); }
     }
 
-    tryMove(dx, dy) {
-      if (this.dead) return;
-      if (!isAdjacent(dx, dy)) return;
 
-      const nx = clamp(this.playerCell.x + dx, 0, GRID_W - 1);
-      const ny = clamp(this.playerCell.y + dy, 0, GRID_H - 1);
-      if (nx === this.playerCell.x && ny === this.playerCell.y) return;
+tryMove(dx, dy) {
+  if (this.dead) return;
+  if (this.moving) return;
+  if (!isAdjacent(dx, dy)) return;
 
-      const k = cellKey(nx, ny);
-      if (this.enemies.has(k)) {
-        this.playerCell = { x: nx, y: ny };
-        this.player.setPosition(this.cellToWorldX(nx), this.cellToWorldY(ny));
-        this.die("stepped onto enemy");
-        return;
-      }
+  const nx = clamp(this.playerCell.x + dx, 0, GRID_W - 1);
+  const ny = clamp(this.playerCell.y + dy, 0, GRID_H - 1);
+  if (nx === this.playerCell.x && ny === this.playerCell.y) return;
 
-      this.playerCell = { x: nx, y: ny };
-      this.player.setPosition(this.cellToWorldX(nx), this.cellToWorldY(ny));
-      setStatus(this.statusLine());
-    }
+  const k = cellKey(nx, ny);
+  const willDie = this.enemies.has(k);
 
-    
-    
-    triggerInhale() {
+  // Update logical cell immediately so attacks/logic reference the destination cell
+  this.playerCell = { x: nx, y: ny };
+
+  // Hop animation (frog-like)
+  this.jumpToCell(nx, ny, willDie);
+}
+
+triggerInhale() { {
       if (!this.player) return;
 
       if (!this._inhaleState) this._inhaleState = { s: 1 };
@@ -641,7 +643,7 @@ playAttackFlash(dx, dy) {
 
       this.attackFlash.clear();
       this.attackFlash.alpha = 1;
-      this.attackFlash.lineStyle(6, 0xff69b4, 1);
+      this.attackFlash.lineStyle(6, 0xf7f2a0, 1);
       this.attackFlash.lineBetween(x0, y0, x1, y1);
 
       this.tweens.add({
