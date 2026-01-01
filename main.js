@@ -547,95 +547,6 @@ this.dead = false;
     }
 
 
-// Frog-like hop movement between grid cells (arc + squash/stretch)
-jumpToCell(fromX, fromY, toX, toY, isDiagonal, willDie) {
-  if (!this.player) return;
-
-  // Cancel any in-flight move tween
-  if (this._moveTween) {
-    try { this._moveTween.stop(); } catch (_) {}
-    try { this._moveTween.remove(); } catch (_) {}
-    this._moveTween = null;
-  }
-
-  // Lock movement during hop
-  this.moving = true;
-
-  // Bring player above entities during hop so the jump reads clearly
-  if (this.player) this.children.bringToTop(this.player);
-
-  // Tuned for a snappy frog hop
-  const duration = isDiagonal ? 145 : 125;
-  const arcHeight = TILE * 0.32;
-
-  const state = { t: 0 };
-
-  const smooth = (u) => u * u * (3 - 2 * u); // smoothstep
-  const clamp01 = (u) => Math.max(0, Math.min(1, u));
-
-  this._moveTween = this.tweens.add({
-    targets: state,
-    t: 1,
-    duration,
-    ease: "Quad.out",
-    onUpdate: () => {
-      const t = state.t;
-
-      // Position lerp
-      const x = fromX + (toX - fromX) * t;
-      const yBase = fromY + (toY - fromY) * t;
-
-      // Parabolic arc (peak at t=0.5)
-      const y = yBase - arcHeight * (4 * t * (1 - t));
-
-      // Squash at takeoff, stretch mid-air, squash on landing
-      const take = smooth(clamp01(t / 0.18));
-      const mid  = smooth(clamp01((t - 0.18) / (0.82 - 0.18)));
-      const land = smooth(clamp01((t - 0.82) / 0.18));
-
-      const squashX = 1.12, squashY = 0.86; // takeoff
-      const stretchX = 0.92, stretchY = 1.10; // mid-air
-      const landSquashX = 1.07, landSquashY = 0.90; // landing
-
-      let sx = 1, sy = 1;
-      if (t < 0.18) {
-        sx = 1 + (squashX - 1) * take;
-        sy = 1 + (squashY - 1) * take;
-      } else if (t < 0.82) {
-        sx = squashX + (stretchX - squashX) * mid;
-        sy = squashY + (stretchY - squashY) * mid;
-      } else {
-        sx = stretchX + (landSquashX - stretchX) * land;
-        sy = stretchY + (landSquashY - stretchY) * land;
-      }
-
-      // Settle back to 1.0 right at the end (prevents scale drift)
-      const settle = smooth(clamp01((t - 0.92) / 0.08));
-      sx = sx + (1 - sx) * settle;
-      sy = sy + (1 - sy) * settle;
-
-      this.player.setPosition(x, y);
-      this.player.setScale(sx, sy);
-    },
-    onComplete: () => {
-      // Snap exactly to destination & normalize scale
-      this.player.setPosition(toX, toY);
-      this.player.setScale(1, 1);
-
-      this.moving = false;
-      this._moveTween = null;
-
-      if (willDie) {
-        this.die("stepped onto enemy");
-        return;
-      }
-
-      setStatus(this.statusLine());
-    }
-  });
-}
-
-
 tryMove(dx, dy) {
   if (this.dead) return;
   if (this.moving) return;
@@ -648,20 +559,14 @@ tryMove(dx, dy) {
   const k = cellKey(nx, ny);
   const willDie = this.enemies.has(k);
 
-  const fromX = this.player.x;
-  const fromY = this.player.y;
-  const toX = this.cellToWorldX(nx);
-  const toY = this.cellToWorldY(ny);
-  const isDiagonal = (Math.abs(dx) === 1 && Math.abs(dy) === 1);
-
-  // Update logical cell immediately so attacks/logic reference the destination cell
+  // Update logical cell immediately so UI/attacks reference the destination cell during the hop
   this.playerCell = { x: nx, y: ny };
 
-  // Frog hop
-  this.jumpToCell(fromX, fromY, toX, toY, isDiagonal, willDie);
+  // Animate frog hop into the next square
+  this.jumpToCell(nx, ny, willDie);
 }
 
-triggerInhale() { {
+triggerInhale() {
       if (!this.player) return;
 
       if (!this._inhaleState) this._inhaleState = { s: 1 };
