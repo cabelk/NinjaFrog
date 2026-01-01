@@ -641,7 +641,7 @@ playAttackFlash(dx, dy) {
 
       this.attackFlash.clear();
       this.attackFlash.alpha = 1;
-      this.attackFlash.lineStyle(6, 0xff69b4, 1);
+      this.attackFlash.lineStyle(6, 0xf7f2a0, 1);
       this.attackFlash.lineBetween(x0, y0, x1, y1);
 
       this.tweens.add({
